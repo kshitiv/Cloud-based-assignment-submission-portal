@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Student Dashboard</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<div class="dashboard">
+  <!-- NAVBAR -->
+  <div class="navbar">
+    <h2>👨‍🎓 Student Dashboard</h2>
+    <div>
+      <span id="studentName" style="margin-right:15px; font-size:14px;"></span>
+      <button onclick="logoutUser()">Logout</button>
+    </div>
+  </div>
+
+  <!-- VIEW ASSIGNMENTS -->
+  <div class="card">
+    <h3>📚 Available Assignments</h3>
+    <div id="assignmentList">Loading...</div>
+  </div>
+
+  <!-- VIEW RESULTS -->
+  <div class="card">
+    <h3>⭐ My Results & Feedback</h3>
+    <div id="resultsList">Loading...</div>
+  </div>
+</div>
+
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+  import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+  import { getFirestore, collection, addDoc, getDocs, doc, getDoc, query, where, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+
+  const firebaseConfig = {
+    apiKey: "AIzaSyAYZ0IvidFdhrfaEeG4Y2w9M50NtWMvBFU",
+    authDomain: "assignment-portal-a11f7.firebaseapp.com",
+    projectId: "assignment-portal-a11f7",
+    storageBucket: "assignment-portal-a11f7.firebasestorage.app",
+    messagingSenderId: "186376623641",
+    appId: "1:186376623641:web:bf7d23f976440f2aac7c88"
+  };
+
+  const app = initializeApp(firebaseConfig);
+  const auth = getAuth(app);
+  const db = getFirestore(app);
+
+  let currentUser = null;
+
+  // CHECK LOGIN
+  onAuthStateChanged(auth, async (user) => {
+    if (!user) {
+      window.location.href = 'index.html';
+      return;
+    }
+    currentUser = user;
+    const userDoc = await getDoc(doc(db, "users", user.uid));
+    if (userDoc.data().role !== 'student') {
+      window.location.href = 'index.html';
+      return;
+    }
+    document.getElementById('studentName').textContent = '👤 ' + userDoc.data().name;
+    loadAssignments();
+    loadResults();
+  });
+
+  // LOAD ASSIGNMENTS
+  async function loadAssignments() {
+    const list = document.getElementById('assignmentList');
+    list.innerHTML = 'Loading...';
+
+    const snapshot = await getDocs(collection(db, "assignments"));
+
+    if (snapshot.empty) {
+      list.innerHTML = '<p style="color:#888">No assignments available yet.</p>';
+      return;
+    }
+
+    list.innerHTML = '';
+    const today = new Date().toISOString().split('T')[0];
+
+    for (const assignDoc of snapshot.docs) {
+      const a = assignDoc.data();
+
+      // Check if already submitted
+      const subQ = query(collection(db, "submissions"),
+        where("assignmentId", "==", assignDoc.id),
+        where("studentId", "==", currentUser.uid)
+      );
+      const subSnap = await getDocs(subQ);
+      const alreadySubmitted = !subSnap.empty;
+      const isExpired = a.deadline < today;
+
+      let actionHTML = '';
+      if (alreadySubmitted) {
+        actionHTML = '<span class="badge badge-green">✅ Submitted</span>';
+      } else if (isExpired) {
+        actionHTML = '<span class="badge badge-red">❌ Deadline Passed</span>';
+      } else {
+        actionHTML = `
+          <label>Your Answer:</label>
+          <textarea id="answer_${assignDoc.id}" 
+            placeholder="Type your answer here..."></textarea>
+          <button class="btn-primary" 
+            onclick="submitAssignment('${assignDoc.id}')">
+            📤 Submit Assignment
+          </button>
+          <p id="submitMsg_${assignDoc.id}" class="msg"></p>`;
+      }
+
+      list.innerHTML += `
+        <div class="assignment-item">
+          <span class="badge badge-blue">📖 ${a.subject}</span>
+          <h4>${a.title}</h4>
+          <p><b>Question:</b> ${a.desc}</p>
+          <p><b>⏰ Deadline:</b> ${a.deadline}</p>
+          ${actionHTML}
+        </div>`;
+    }
+  }
+
+  // SUBMIT ASSIGNMENT
+  window.submitAssignment = async function(assignId) {
+    const answer = document.getElementById('answer_' + assignId).value;
+    const msg = document.getElementById('submitMsg_' + assignId);
+
+    if (!answer.trim()) {
+      msg.style.color = 'red';
+      msg.textContent = '⚠️ Please write your answer!';
+      return;
+    }
+
+    try {
+      await addDoc(collection(db, "submissions"), {
+        assignmentId: assignId,
+        studentId: currentUser.uid,
+        answer: answer,
+        submittedAt: serverTimestamp(),
+        marks: null,
+        feedback: null
+      });
+      msg.style.color = 'green';
+      msg.textContent = '✅ Submitted successfully!';
+      setTimeout(() => loadAssignments(), 1500);
+    } catch (err) {
+      msg.style.color = 'red';
+      msg.textContent = '❌ ' + err.message;
+    }
+  }
+
+  // LOAD RESULTS
+  async function loadResults() {
+    const list = document.getElementById('resultsList');
+    list.innerHTML = 'Loading...';
+
+    const subQ = query(collection(db, "submissions"),
+      where("studentId", "==", currentUser.uid)
+    );
+    const subSnap = await getDocs(subQ);
+
+    if (subSnap.empty) {
+      list.innerHTML = '<p style="color:#888">No submissions yet.</p>';
+      return;
+    }
+
+    list.innerHTML = '';
+    for (const subDoc of subSnap.docs) {
+      const s = subDoc.data();
+      const assignDoc = await getDoc(doc(db, "assignments", s.assignmentId));
+      const a = assignDoc.data();
+
+      list.innerHTML += `
+        <div class="assignment-item">
+          <span class="badge badge-blue">📖 ${a.subject}</span>
+          <h4>${a.title}</h4>
+          <p><b>📝 Your Answer:</b> ${s.answer}</p>
+          <p><b>⭐ Marks:</b> 
+            ${s.marks !== null && s.marks !== undefined 
+              ? '<span class="badge badge-green">' + s.marks + ' / 100</span>' 
+              : '<span class="badge badge-red">Not graded yet</span>'}
+          </p>
+          <p><b>💬 Feedback:</b> 
+            ${s.feedback || 'No feedback yet'}
+          </p>
+        </div>`;
+    }
+  }
+
+  // LOGOUT
+  window.logoutUser = async function() {
+    await signOut(auth);
+    window.location.href = 'index.html';
+  }
+</script>
+
+</body>
+</html>

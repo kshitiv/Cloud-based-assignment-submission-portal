@@ -1,0 +1,206 @@
+s<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Faculty Dashboard</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<div class="dashboard">
+  <!-- NAVBAR -->
+  <div class="navbar">
+    <h2>👨‍🏫 Faculty Dashboard</h2>
+    <div>
+      <span id="facultyName" style="margin-right:15px; font-size:14px;"></span>
+      <button onclick="logoutUser()">Logout</button>
+    </div>
+  </div>
+
+  <!-- POST ASSIGNMENT -->
+  <div class="card">
+    <h3>📝 Post New Assignment</h3>
+    <label>Assignment Title</label>
+    <input type="text" id="assignTitle" placeholder="e.g. Database Normalization" />
+    <label>Assignment Description / Question</label>
+    <textarea id="assignDesc" placeholder="Write the assignment question here..."></textarea>
+    <label>Deadline</label>
+    <input type="date" id="assignDeadline" />
+    <label>Subject</label>
+    <input type="text" id="assignSubject" placeholder="e.g. DBMS" />
+    <button class="btn-primary" onclick="postAssignment()">📤 Post Assignment</button>
+    <p id="postMsg" class="msg"></p>
+  </div>
+
+  <!-- VIEW SUBMISSIONS -->
+  <div class="card">
+    <h3>📋 Posted Assignments & Submissions</h3>
+    <div id="assignmentList">Loading...</div>
+  </div>
+</div>
+
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+  import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+  import { getFirestore, collection, addDoc, getDocs, doc, getDoc, updateDoc, query, where, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+
+  const firebaseConfig = {
+    apiKey: "AIzaSyAYZ0IvidFdhrfaEeG4Y2w9M50NtWMvBFU",
+    authDomain: "assignment-portal-a11f7.firebaseapp.com",
+    projectId: "assignment-portal-a11f7",
+    storageBucket: "assignment-portal-a11f7.firebasestorage.app",
+    messagingSenderId: "186376623641",
+    appId: "1:186376623641:web:bf7d23f976440f2aac7c88"
+  };
+
+  const app = initializeApp(firebaseConfig);
+  const auth = getAuth(app);
+  const db = getFirestore(app);
+
+  let currentUser = null;
+
+  // CHECK LOGIN
+  onAuthStateChanged(auth, async (user) => {
+    if (!user) {
+      window.location.href = 'index.html';
+      return;
+    }
+    currentUser = user;
+    const userDoc = await getDoc(doc(db, "users", user.uid));
+    if (userDoc.data().role !== 'faculty') {
+      window.location.href = 'index.html';
+      return;
+    }
+    document.getElementById('facultyName').textContent = '👤 ' + userDoc.data().name;
+    loadAssignments();
+  });
+
+  // POST ASSIGNMENT
+  window.postAssignment = async function() {
+    const title = document.getElementById('assignTitle').value;
+    const desc = document.getElementById('assignDesc').value;
+    const deadline = document.getElementById('assignDeadline').value;
+    const subject = document.getElementById('assignSubject').value;
+    const msg = document.getElementById('postMsg');
+
+    if (!title || !desc || !deadline || !subject) {
+      msg.style.color = 'red';
+      msg.textContent = '⚠️ Please fill all fields!';
+      return;
+    }
+
+    try {
+      await addDoc(collection(db, "assignments"), {
+        title, desc, deadline, subject,
+        facultyId: currentUser.uid,
+        createdAt: serverTimestamp()
+      });
+      msg.style.color = 'green';
+      msg.textContent = '✅ Assignment posted successfully!';
+      document.getElementById('assignTitle').value = '';
+      document.getElementById('assignDesc').value = '';
+      document.getElementById('assignDeadline').value = '';
+      document.getElementById('assignSubject').value = '';
+      loadAssignments();
+    } catch (err) {
+      msg.style.color = 'red';
+      msg.textContent = '❌ ' + err.message;
+    }
+  }
+
+  // LOAD ASSIGNMENTS + SUBMISSIONS
+  async function loadAssignments() {
+    const list = document.getElementById('assignmentList');
+    list.innerHTML = 'Loading...';
+
+    const q = query(collection(db, "assignments"), where("facultyId", "==", currentUser.uid));
+    const snapshot = await getDocs(q);
+
+    if (snapshot.empty) {
+      list.innerHTML = '<p style="color:#888">No assignments posted yet.</p>';
+      return;
+    }
+
+    list.innerHTML = '';
+    for (const assignDoc of snapshot.docs) {
+      const a = assignDoc.data();
+
+      // Get submissions for this assignment
+      const subQ = query(collection(db, "submissions"), where("assignmentId", "==", assignDoc.id));
+      const subSnap = await getDocs(subQ);
+
+      let submissionsHTML = '';
+      if (subSnap.empty) {
+        submissionsHTML = '<p style="color:#888; font-size:13px;">No submissions yet.</p>';
+      } else {
+        for (const subDoc of subSnap.docs) {
+          const s = subDoc.data();
+          const studentDoc = await getDoc(doc(db, "users", s.studentId));
+          const studentName = studentDoc.data().name;
+
+          submissionsHTML += `
+            <div style="background:#f0f4ff; border-radius:8px; padding:12px; margin-top:10px;">
+              <p><b>👤 Student:</b> ${studentName}</p>
+              <p><b>📝 Answer:</b> ${s.answer}</p>
+              <p><b>🕐 Submitted:</b> ${s.submittedAt ? new Date(s.submittedAt.seconds * 1000).toLocaleString() : 'N/A'}</p>
+              <p><b>⭐ Marks:</b> ${s.marks !== null && s.marks !== undefined ? s.marks : 'Not graded yet'}</p>
+              <p><b>💬 Feedback:</b> ${s.feedback || 'No feedback yet'}</p>
+              <input type="number" id="marks_${subDoc.id}" placeholder="Enter marks" min="0" max="100"
+                style="width:150px; padding:6px; margin-top:8px; border-radius:6px; border:2px solid #ddd;" />
+              <input type="text" id="feedback_${subDoc.id}" placeholder="Enter feedback"
+                style="width:200px; padding:6px; margin-top:8px; border-radius:6px; border:2px solid #ddd;" />
+              <button onclick="gradeSubmission('${subDoc.id}')"
+                style="background:#0f3460; color:white; border:none; padding:7px 15px; border-radius:6px; cursor:pointer; margin-top:8px; margin-left:5px;">
+                ✅ Save Grade
+              </button>
+              <p id="gradeMsg_${subDoc.id}" style="font-size:13px; margin-top:5px;"></p>
+            </div>`;
+        }
+      }
+
+      list.innerHTML += `
+        <div class="assignment-item">
+          <h4>📚 ${a.title}</h4>
+          <p><b>Subject:</b> ${a.subject}</p>
+          <p><b>Description:</b> ${a.desc}</p>
+          <p><b>Deadline:</b> ${a.deadline}</p>
+          <p><b>Total Submissions:</b> ${subSnap.size}</p>
+          <div>${submissionsHTML}</div>
+        </div>`;
+    }
+  }
+
+  // GRADE SUBMISSION
+  window.gradeSubmission = async function(subId) {
+    const marks = document.getElementById('marks_' + subId).value;
+    const feedback = document.getElementById('feedback_' + subId).value;
+    const msg = document.getElementById('gradeMsg_' + subId);
+
+    if (!marks) {
+      msg.style.color = 'red';
+      msg.textContent = '⚠️ Please enter marks!';
+      return;
+    }
+
+    try {
+      await updateDoc(doc(db, "submissions", subId), {
+        marks: Number(marks),
+        feedback: feedback
+      });
+      msg.style.color = 'green';
+      msg.textContent = '✅ Grade saved!';
+    } catch (err) {
+      msg.style.color = 'red';
+      msg.textContent = '❌ ' + err.message;
+    }
+  }
+
+  // LOGOUT
+  window.logoutUser = async function() {
+    await signOut(auth);
+    window.location.href = 'index.html';
+  }
+</script>
+
+</body>
+</html>

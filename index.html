@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Assignment Portal - Login</title>
+
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<div class="container">
+
+  <h1>📚 Assignment Portal</h1>
+  <p>Dayananda Sagar College of Engineering</p>
+
+  <!-- TABS -->
+  <div class="tabs">
+    <button onclick="showTab('login')" id="loginTab" class="active">
+      Login
+    </button>
+
+    <button onclick="showTab('register')" id="registerTab">
+      Register
+    </button>
+  </div>
+
+  <!-- LOGIN FORM -->
+  <div id="loginForm">
+
+    <input
+      type="email"
+      id="loginEmail"
+      placeholder="Enter Email"
+    />
+
+    <input
+      type="password"
+      id="loginPassword"
+      placeholder="Enter Password"
+    />
+
+    <select id="loginRole">
+      <option value="">-- Select Role --</option>
+      <option value="student">Student</option>
+      <option value="faculty">Faculty</option>
+    </select>
+
+    <button onclick="loginUser()" class="btn-primary">
+      Login
+    </button>
+
+    <p id="loginMsg" class="msg"></p>
+
+  </div>
+
+  <!-- REGISTER FORM -->
+  <div id="registerForm" style="display:none">
+
+    <input
+      type="text"
+      id="regName"
+      placeholder="Full Name"
+    />
+
+    <input
+      type="email"
+      id="regEmail"
+      placeholder="Enter Email"
+    />
+
+    <input
+      type="password"
+      id="regPassword"
+      placeholder="Create Password"
+    />
+
+    <select id="regRole">
+      <option value="">-- Select Role --</option>
+      <option value="student">Student</option>
+      <option value="faculty">Faculty</option>
+    </select>
+
+    <button onclick="registerUser()" class="btn-primary">
+      Register
+    </button>
+
+    <p id="registerMsg" class="msg"></p>
+
+  </div>
+
+</div>
+
+<!-- FIREBASE -->
+<script type="module" src="script.js"></script>
+
+</body>
+</html>

@@ -1,0 +1,327 @@
+/* =========================
+   GLOBAL STYLES
+========================= */
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+  font-family: 'Segoe UI', sans-serif;
+}
+
+body {
+  background: linear-gradient(135deg, #1a1a2e, #16213e, #0f3460);
+  min-height: 100vh;
+}
+
+/* =========================
+   LOGIN / REGISTER PAGE
+========================= */
+
+.container {
+  background: white;
+  padding: 40px;
+  border-radius: 15px;
+  width: 400px;
+  max-width: 90%;
+  margin: 40px auto;
+  box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+  text-align: center;
+}
+
+h1 {
+  color: #0f3460;
+  font-size: 28px;
+  margin-bottom: 5px;
+}
+
+p {
+  color: #666;
+  font-size: 13px;
+  margin-bottom: 20px;
+}
+
+/* =========================
+   TABS
+========================= */
+
+.tabs {
+  display: flex;
+  margin-bottom: 20px;
+  border-radius: 8px;
+  overflow: hidden;
+  border: 2px solid #0f3460;
+}
+
+.tabs button {
+  flex: 1;
+  padding: 10px;
+  border: none;
+  background: white;
+  color: #0f3460;
+  font-size: 15px;
+  cursor: pointer;
+  font-weight: bold;
+}
+
+.tabs button.active {
+  background: #0f3460;
+  color: white;
+}
+
+/* =========================
+   INPUTS
+========================= */
+
+input,
+select,
+textarea {
+  width: 100%;
+  padding: 12px 15px;
+  margin: 8px 0;
+  border: 2px solid #ddd;
+  border-radius: 8px;
+  font-size: 14px;
+  outline: none;
+  transition: border 0.3s;
+}
+
+input:focus,
+select:focus,
+textarea:focus {
+  border-color: #0f3460;
+}
+
+textarea {
+  resize: vertical;
+  min-height: 100px;
+}
+
+/* =========================
+   BUTTONS
+========================= */
+
+.btn-primary {
+  width: 100%;
+  padding: 12px;
+  background: #0f3460;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-size: 16px;
+  cursor: pointer;
+  margin-top: 10px;
+  font-weight: bold;
+  transition: 0.3s;
+}
+
+.btn-primary:hover {
+  background: #e94560;
+}
+
+.btn-secondary {
+  width: 100%;
+  padding: 12px;
+  background: #e94560;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-size: 16px;
+  cursor: pointer;
+  margin-top: 10px;
+  font-weight: bold;
+  transition: 0.3s;
+}
+
+.btn-secondary:hover {
+  background: #0f3460;
+}
+
+/* =========================
+   MESSAGE
+========================= */
+
+.msg {
+  margin-top: 10px;
+  font-size: 14px;
+  font-weight: bold;
+}
+
+/* =========================
+   DASHBOARD
+========================= */
+
+.dashboard {
+  width: 100%;
+  background: #f0f4ff;
+  min-height: 100vh;
+  padding: 30px;
+}
+
+/* =========================
+   NAVBAR
+========================= */
+
+.navbar {
+  background: #0f3460;
+  color: white;
+  padding: 15px 30px;
+  border-radius: 10px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 30px;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.navbar h2 {
+  font-size: 22px;
+}
+
+.navbar button {
+  background: #e94560;
+  color: white;
+  border: none;
+  padding: 8px 18px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-weight: bold;
+  transition: 0.3s;
+}
+
+.navbar button:hover {
+  background: #ff5f7a;
+}
+
+/* =========================
+   BACK BUTTON
+========================= */
+
+.back-btn {
+  background: white !important;
+  color: #0f3460 !important;
+  margin-right: 10px;
+}
+
+.back-btn:hover {
+  background: #dce5ff !important;
+}
+
+/* =========================
+   CARDS
+========================= */
+
+.card {
+  background: white;
+  padding: 25px;
+  border-radius: 12px;
+  box-shadow: 0 5px 20px rgba(0,0,0,0.1);
+  margin-bottom: 25px;
+}
+
+.card h3 {
+  color: #0f3460;
+  margin-bottom: 20px;
+  font-size: 22px;
+}
+
+/* =========================
+   ASSIGNMENTS
+========================= */
+
+.assignment-item {
+  background: #f8f9ff;
+  border: 2px solid #e0e7ff;
+  border-radius: 10px;
+  padding: 18px;
+  margin-bottom: 18px;
+}
+
+.assignment-item h4 {
+  color: #0f3460;
+  margin-bottom: 10px;
+  font-size: 20px;
+}
+
+.assignment-item p {
+  color: #444;
+  font-size: 14px;
+  margin-bottom: 8px;
+  text-align: left;
+  line-height: 1.5;
+}
+
+/* =========================
+   BADGES
+========================= */
+
+.badge {
+  display: inline-block;
+  padding: 5px 14px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: bold;
+  margin-bottom: 10px;
+}
+
+.badge-green {
+  background: #d4edda;
+  color: #155724;
+}
+
+.badge-red {
+  background: #f8d7da;
+  color: #721c24;
+}
+
+.badge-blue {
+  background: #cce5ff;
+  color: #004085;
+}
+
+/* =========================
+   LABELS
+========================= */
+
+label {
+  display: block;
+  text-align: left;
+  font-weight: bold;
+  color: #0f3460;
+  margin: 12px 0 5px;
+  font-size: 14px;
+}
+
+/* =========================
+   RESPONSIVE DESIGN
+========================= */
+
+@media (max-width: 768px) {
+
+  .dashboard {
+    padding: 15px;
+  }
+
+  .navbar {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .navbar h2 {
+    font-size: 20px;
+  }
+
+  .card {
+    padding: 18px;
+  }
+
+  .assignment-item h4 {
+    font-size: 18px;
+  }
+
+  .container {
+    width: 95%;
+    padding: 25px;
+  }
+}
