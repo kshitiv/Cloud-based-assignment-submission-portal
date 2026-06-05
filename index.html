@@ -1,0 +1,538 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Assignment Portal — DSCE</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<div class="auth-bg">
+  <div class="auth-card">
+
+    <div class="auth-logo">
+      <span class="logo-icon">🎓</span>
+      <h1>Assignment Portal</h1>
+      <p>DAYANANDA SAGAR COLLEGE OF ENGINEERING</p>
+    </div>
+
+    <!-- TABS -->
+    <div class="tabs">
+      <button onclick="showTab('login')" id="loginTab" class="active">Login</button>
+      <button onclick="showTab('register')" id="registerTab">Register</button>
+    </div>
+
+    <!-- ===== LOGIN FORM ===== -->
+    <div id="loginForm">
+      <div class="form-group">
+        <label>Role</label>
+        <select id="loginRole" onchange="updateLoginFields()">
+          <option value="">— Select Role —</option>
+          <option value="student">Student</option>
+          <option value="faculty">Faculty</option>
+        </select>
+      </div>
+
+      <div class="form-group" id="loginIdGroup" style="display:none">
+        <label id="loginIdLabel">USN / Faculty ID</label>
+        <input type="text" id="loginId" placeholder="e.g. 1DS21CS001" />
+      </div>
+
+      <div class="form-group">
+        <label>Password</label>
+        <input type="password" id="loginPassword" placeholder="Enter password" />
+        <span class="forgot-link" onclick="showForgotPassword()">Forgot password?</span>
+      </div>
+
+      <button class="btn-primary" onclick="loginUser()">🔐 Login</button>
+      <div id="loginMsg" class="msg"></div>
+    </div>
+
+    <!-- ===== REGISTER FORM ===== -->
+    <div id="registerForm" style="display:none">
+      <div class="form-group">
+        <label>Full Name</label>
+        <input type="text" id="regName" placeholder="Your full name" />
+      </div>
+
+      <div class="form-group">
+        <label>Email Address</label>
+        <input type="email" id="regEmail" placeholder="college@dsce.edu.in" />
+      </div>
+
+      <div class="form-group">
+        <label>Role</label>
+        <select id="regRole" onchange="updateRegisterFields()">
+          <option value="">— Select Role —</option>
+          <option value="student">Student</option>
+          <option value="faculty">Faculty</option>
+        </select>
+      </div>
+
+      <!-- Student fields -->
+      <div id="studentRegFields" style="display:none">
+        <div class="form-group">
+          <label>USN (University Seat Number)</label>
+          <input type="text" id="regUSN" placeholder="e.g. 1DS21CS001" style="text-transform:uppercase" />
+        </div>
+        <div class="form-group">
+          <label>Department</label>
+          <select id="regDept">
+            <option value="">— Select Department —</option>
+            <option>Computer Science Engineering</option>
+            <option>Information Science Engineering</option>
+            <option>Electronics & Communication</option>
+            <option>Electrical Engineering</option>
+            <option>Mechanical Engineering</option>
+            <option>Civil Engineering</option>
+            <option>Artificial Intelligence & ML</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Semester</label>
+          <select id="regSem">
+            <option value="">— Semester —</option>
+            <option>1</option><option>2</option><option>3</option><option>4</option>
+            <option>5</option><option>6</option><option>7</option><option>8</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- Faculty fields -->
+      <div id="facultyRegFields" style="display:none">
+        <div class="form-group">
+          <label>Faculty ID</label>
+          <input type="text" id="regFacultyId" placeholder="e.g. FAC2024001" style="text-transform:uppercase" />
+        </div>
+        <div class="form-group">
+          <label>Department</label>
+          <select id="regFacultyDept">
+            <option value="">— Select Department —</option>
+            <option>Computer Science Engineering</option>
+            <option>Information Science Engineering</option>
+            <option>Electronics & Communication</option>
+            <option>Electrical Engineering</option>
+            <option>Mechanical Engineering</option>
+            <option>Civil Engineering</option>
+            <option>Artificial Intelligence & ML</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Subjects Teaching (comma separated)</label>
+          <input type="text" id="regSubjects" placeholder="e.g. DBMS, OS, CN" />
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label>Password</label>
+        <input type="password" id="regPassword" placeholder="Min 6 characters" />
+      </div>
+
+      <!-- Security Questions -->
+      <div style="background:var(--bg-card2);border:1px solid var(--border);border-radius:12px;padding:16px;margin-bottom:14px;">
+        <p style="font-size:12px;color:var(--accent);font-weight:700;letter-spacing:0.05em;margin-bottom:14px;">🔒 SECURITY QUESTIONS — for password recovery</p>
+
+        <div class="form-group">
+          <label>Security Question 1</label>
+          <select id="regSQ1">
+            <option value="">— Select a question —</option>
+            <option>What is the name of your first pet?</option>
+            <option>What is your mother's maiden name?</option>
+            <option>What was the name of your first school?</option>
+            <option>What is your favourite childhood nickname?</option>
+            <option>What city were you born in?</option>
+            <option>What is your oldest sibling's middle name?</option>
+            <option>What was the make of your first car?</option>
+            <option>What was your childhood nickname?</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Answer 1</label>
+          <input type="text" id="regSA1" placeholder="Your answer (case-insensitive)" />
+        </div>
+
+        <div class="form-group">
+          <label>Security Question 2</label>
+          <select id="regSQ2">
+            <option value="">— Select a question —</option>
+            <option>What is the name of your first pet?</option>
+            <option>What is your mother's maiden name?</option>
+            <option>What was the name of your first school?</option>
+            <option>What is your favourite childhood nickname?</option>
+            <option>What city were you born in?</option>
+            <option>What is your oldest sibling's middle name?</option>
+            <option>What was the make of your first car?</option>
+            <option>What was your childhood nickname?</option>
+          </select>
+        </div>
+        <div class="form-group" style="margin-bottom:0;">
+          <label>Answer 2</label>
+          <input type="text" id="regSA2" placeholder="Your answer (case-insensitive)" />
+        </div>
+      </div>
+
+      <button class="btn-primary" onclick="registerUser()">✨ Create Account</button>
+      <div id="registerMsg" class="msg"></div>
+    </div>
+
+    <!-- ===== FORGOT PASSWORD MODAL ===== -->
+    <div class="modal-overlay" id="forgotModal">
+      <div class="modal" style="width:440px">
+        <div class="modal-header">
+          <h3 id="forgotModalTitle">🔑 Reset Password</h3>
+          <button class="modal-close" onclick="closeForgotModal()">✕</button>
+        </div>
+
+        <!-- Step 1: Identify user -->
+        <div id="fpStep1">
+          <p style="color:var(--text-muted);font-size:13px;margin-bottom:18px;">Enter your role and ID to begin password recovery.</p>
+          <div class="form-group">
+            <label>Role</label>
+            <select id="fpRole">
+              <option value="">— Select Role —</option>
+              <option value="student">Student</option>
+              <option value="faculty">Faculty</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label id="fpIdLabel">USN / Faculty ID</label>
+            <input type="text" id="fpId" placeholder="e.g. 1DS21CS001" />
+          </div>
+          <button class="btn-primary" onclick="fpVerifyId()">➡️ Next</button>
+          <div id="fpMsg1" class="msg"></div>
+        </div>
+
+        <!-- Step 2: Answer security questions -->
+        <div id="fpStep2" style="display:none">
+          <p style="color:var(--text-muted);font-size:13px;margin-bottom:18px;">Answer your security questions to verify your identity.</p>
+          <div class="form-group">
+            <label id="fpQ1Label" style="font-weight:600;color:var(--text);text-transform:none;letter-spacing:0;font-size:13px;"></label>
+            <input type="text" id="fpA1" placeholder="Your answer" />
+          </div>
+          <div class="form-group">
+            <label id="fpQ2Label" style="font-weight:600;color:var(--text);text-transform:none;letter-spacing:0;font-size:13px;"></label>
+            <input type="text" id="fpA2" placeholder="Your answer" />
+          </div>
+          <button class="btn-primary" onclick="fpVerifyAnswers()">✅ Verify Answers</button>
+          <div id="fpMsg2" class="msg"></div>
+        </div>
+
+        <!-- Step 3: Set new password -->
+        <div id="fpStep3" style="display:none">
+          <p style="color:var(--text-muted);font-size:13px;margin-bottom:18px;">Identity verified! Set your new password below.</p>
+          <div class="form-group">
+            <label>New Password</label>
+            <input type="password" id="fpNewPass" placeholder="Min 6 characters" />
+          </div>
+          <div class="form-group">
+            <label>Confirm New Password</label>
+            <input type="password" id="fpConfirmPass" placeholder="Re-enter password" />
+          </div>
+          <button class="btn-primary" onclick="fpSetNewPassword()">🔐 Set New Password</button>
+          <div id="fpMsg3" class="msg"></div>
+        </div>
+
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+  import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, updatePassword, EmailAuthProvider, reauthenticateWithCredential } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+  import { getFirestore, doc, setDoc, getDoc, updateDoc, collection, query, where, getDocs } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+
+  const firebaseConfig = {
+    apiKey: "AIzaSyAYZ0IvidFdhrfaEeG4Y2w9M50NtWMvBFU",
+    authDomain: "assignment-portal-a11f7.firebaseapp.com",
+    projectId: "assignment-portal-a11f7",
+    storageBucket: "assignment-portal-a11f7.firebasestorage.app",
+    messagingSenderId: "186376623641",
+    appId: "1:186376623641:web:bf7d23f976440f2aac7c88"
+  };
+
+  const app = initializeApp(firebaseConfig);
+  const auth = getAuth(app);
+  const db = getFirestore(app);
+
+  // Holds the user doc found during forgot-password flow
+  let fpUserData = null;
+  let fpUserDocId = null;
+
+  // === HELPERS ===
+  function showMsg(id, text, type) {
+    const el = document.getElementById(id);
+    el.textContent = text;
+    el.className = `msg show ${type}`;
+  }
+
+  // === TAB SWITCHING ===
+  window.showTab = function(tab) {
+    document.getElementById('loginForm').style.display = tab === 'login' ? 'block' : 'none';
+    document.getElementById('registerForm').style.display = tab === 'register' ? 'block' : 'none';
+    document.getElementById('loginTab').className = tab === 'login' ? 'active' : '';
+    document.getElementById('registerTab').className = tab === 'register' ? 'active' : '';
+    document.getElementById('loginMsg').className = 'msg';
+    document.getElementById('registerMsg').className = 'msg';
+  }
+
+  window.updateLoginFields = function() {
+    const role = document.getElementById('loginRole').value;
+    const grp = document.getElementById('loginIdGroup');
+    const lbl = document.getElementById('loginIdLabel');
+    if (role === 'student') { grp.style.display = 'block'; lbl.textContent = 'USN'; document.getElementById('loginId').placeholder = 'e.g. 1DS21CS001'; }
+    else if (role === 'faculty') { grp.style.display = 'block'; lbl.textContent = 'Faculty ID'; document.getElementById('loginId').placeholder = 'e.g. FAC2024001'; }
+    else { grp.style.display = 'none'; }
+  }
+
+  window.updateRegisterFields = function() {
+    const role = document.getElementById('regRole').value;
+    document.getElementById('studentRegFields').style.display = role === 'student' ? 'block' : 'none';
+    document.getElementById('facultyRegFields').style.display = role === 'faculty' ? 'block' : 'none';
+  }
+
+  // === REGISTER ===
+  window.registerUser = async function() {
+    const name = document.getElementById('regName').value.trim();
+    const email = document.getElementById('regEmail').value.trim();
+    const password = document.getElementById('regPassword').value.trim();
+    const role = document.getElementById('regRole').value;
+    const sq1 = document.getElementById('regSQ1').value;
+    const sa1 = document.getElementById('regSA1').value.trim().toLowerCase();
+    const sq2 = document.getElementById('regSQ2').value;
+    const sa2 = document.getElementById('regSA2').value.trim().toLowerCase();
+
+    if (!name || !email || !password || !role) {
+      showMsg('registerMsg', '⚠️ Please fill all required fields!', 'error'); return;
+    }
+    if (!sq1 || !sa1 || !sq2 || !sa2) {
+      showMsg('registerMsg', '⚠️ Please set both security questions and answers!', 'error'); return;
+    }
+    if (sq1 === sq2) {
+      showMsg('registerMsg', '⚠️ Please choose two different security questions!', 'error'); return;
+    }
+
+    let uniqueId = '', extraData = {};
+
+    if (role === 'student') {
+      const usn = document.getElementById('regUSN').value.trim().toUpperCase();
+      const dept = document.getElementById('regDept').value;
+      const sem = document.getElementById('regSem').value;
+      if (!usn || !dept || !sem) { showMsg('registerMsg', '⚠️ Please fill all student fields!', 'error'); return; }
+
+      const usnQuery = query(collection(db, "users"), where("usn", "==", usn));
+      const usnSnap = await getDocs(usnQuery);
+      if (!usnSnap.empty) { showMsg('registerMsg', '❌ This USN is already registered!', 'error'); return; }
+
+      uniqueId = usn;
+      extraData = { usn, department: dept, semester: sem };
+    } else {
+      const facultyId = document.getElementById('regFacultyId').value.trim().toUpperCase();
+      const dept = document.getElementById('regFacultyDept').value;
+      const subjects = document.getElementById('regSubjects').value.trim();
+      if (!facultyId || !dept) { showMsg('registerMsg', '⚠️ Please fill all faculty fields!', 'error'); return; }
+
+      const fidQuery = query(collection(db, "users"), where("facultyId", "==", facultyId));
+      const fidSnap = await getDocs(fidQuery);
+      if (!fidSnap.empty) { showMsg('registerMsg', '❌ This Faculty ID is already registered!', 'error'); return; }
+
+      uniqueId = facultyId;
+      extraData = { facultyId, department: dept, subjects: subjects.split(',').map(s => s.trim()).filter(Boolean) };
+    }
+
+    try {
+      const userCred = await createUserWithEmailAndPassword(auth, email, password);
+
+      await setDoc(doc(db, "users", userCred.user.uid), {
+        name, email, role,
+        passwordPlain: password,
+        securityQ1: sq1, securityA1: sa1,
+        securityQ2: sq2, securityA2: sa2,
+        uid: userCred.user.uid,
+        createdAt: new Date().toISOString(),
+        ...extraData
+      });
+
+      showMsg('registerMsg', '✅ Registered successfully! Redirecting to login...', 'success');
+
+      ['regName','regEmail','regPassword','regUSN','regFacultyId','regSubjects','regSA1','regSA2'].forEach(id => {
+        const el = document.getElementById(id); if (el) el.value = '';
+      });
+      ['regRole','regDept','regSem','regFacultyDept','regSQ1','regSQ2'].forEach(id => {
+        const el = document.getElementById(id); if (el) el.value = '';
+      });
+      document.getElementById('studentRegFields').style.display = 'none';
+      document.getElementById('facultyRegFields').style.display = 'none';
+
+      await signOut(auth);
+      setTimeout(() => showTab('login'), 1200);
+    } catch (err) {
+      if (err.code === 'auth/email-already-in-use') showMsg('registerMsg', '❌ Email already registered!', 'error');
+      else if (err.code === 'auth/weak-password') showMsg('registerMsg', '❌ Password must be at least 6 characters!', 'error');
+      else showMsg('registerMsg', '❌ ' + err.message, 'error');
+    }
+  }
+
+  // === LOGIN ===
+  window.loginUser = async function() {
+    const role = document.getElementById('loginRole').value;
+    const loginId = document.getElementById('loginId').value.trim().toUpperCase();
+    const password = document.getElementById('loginPassword').value.trim();
+
+    if (!role || !loginId || !password) {
+      showMsg('loginMsg', '⚠️ Please fill all fields!', 'error'); return;
+    }
+
+    try {
+      const field = role === 'student' ? 'usn' : 'facultyId';
+      const q = query(collection(db, "users"), where(field, "==", loginId), where("role", "==", role));
+      const snap = await getDocs(q);
+
+      if (snap.empty) {
+        showMsg('loginMsg', `❌ No ${role} found with that ${role === 'student' ? 'USN' : 'Faculty ID'}!`, 'error'); return;
+      }
+
+      const userData = snap.docs[0].data();
+      const email = userData.email;
+
+      await signInWithEmailAndPassword(auth, email, password);
+
+      showMsg('loginMsg', '✅ Login successful! Redirecting...', 'success');
+      document.getElementById('loginPassword').value = '';
+
+      setTimeout(() => {
+        window.location.href = role === 'faculty' ? 'faculty.html' : 'student.html';
+      }, 900);
+    } catch (err) {
+      if (['auth/invalid-credential','auth/wrong-password','auth/user-not-found'].includes(err.code)) {
+        showMsg('loginMsg', '❌ Invalid credentials!', 'error');
+      } else {
+        showMsg('loginMsg', '❌ ' + err.message, 'error');
+      }
+    }
+  }
+
+  // === FORGOT PASSWORD — multi-step ===
+  window.showForgotPassword = function() {
+    fpUserData = null;
+    fpUserDocId = null;
+    // Reset all steps
+    document.getElementById('fpStep1').style.display = 'block';
+    document.getElementById('fpStep2').style.display = 'none';
+    document.getElementById('fpStep3').style.display = 'none';
+    document.getElementById('fpRole').value = '';
+    document.getElementById('fpId').value = '';
+    document.getElementById('fpA1').value = '';
+    document.getElementById('fpA2').value = '';
+    document.getElementById('fpNewPass').value = '';
+    document.getElementById('fpConfirmPass').value = '';
+    ['fpMsg1','fpMsg2','fpMsg3'].forEach(id => { document.getElementById(id).className = 'msg'; });
+    document.getElementById('forgotModalTitle').textContent = '🔑 Reset Password — Step 1 of 3';
+    document.getElementById('forgotModal').classList.add('open');
+  }
+
+  window.closeForgotModal = function() {
+    document.getElementById('forgotModal').classList.remove('open');
+  }
+
+  // Step 1: look up user by role + USN/FacultyID
+  window.fpVerifyId = async function() {
+    const role = document.getElementById('fpRole').value;
+    const id = document.getElementById('fpId').value.trim().toUpperCase();
+    if (!role || !id) { showMsg('fpMsg1', '⚠️ Please fill all fields!', 'error'); return; }
+
+    const field = role === 'student' ? 'usn' : 'facultyId';
+    const q = query(collection(db, "users"), where(field, "==", id), where("role", "==", role));
+    const snap = await getDocs(q);
+
+    if (snap.empty) {
+      showMsg('fpMsg1', `❌ No ${role} found with that ${role === 'student' ? 'USN' : 'Faculty ID'}!`, 'error'); return;
+    }
+
+    fpUserData = snap.docs[0].data();
+    fpUserDocId = snap.docs[0].id;
+
+    if (!fpUserData.securityQ1 || !fpUserData.securityQ2) {
+      showMsg('fpMsg1', '❌ No security questions set for this account. Please contact admin.', 'error'); return;
+    }
+
+    // Move to step 2
+    document.getElementById('fpQ1Label').textContent = `Q1: ${fpUserData.securityQ1}`;
+    document.getElementById('fpQ2Label').textContent = `Q2: ${fpUserData.securityQ2}`;
+    document.getElementById('fpStep1').style.display = 'none';
+    document.getElementById('fpStep2').style.display = 'block';
+    document.getElementById('forgotModalTitle').textContent = '🔑 Reset Password — Step 2 of 3';
+  }
+
+  // Step 2: verify security answers
+  window.fpVerifyAnswers = function() {
+    const a1 = document.getElementById('fpA1').value.trim().toLowerCase();
+    const a2 = document.getElementById('fpA2').value.trim().toLowerCase();
+
+    if (!a1 || !a2) { showMsg('fpMsg2', '⚠️ Please answer both questions!', 'error'); return; }
+
+    const correct1 = (fpUserData.securityA1 || '').toLowerCase().trim() === a1;
+    const correct2 = (fpUserData.securityA2 || '').toLowerCase().trim() === a2;
+
+    if (!correct1 && !correct2) {
+      showMsg('fpMsg2', '❌ Both answers are incorrect. Please try again.', 'error'); return;
+    }
+    if (!correct1) {
+      showMsg('fpMsg2', '❌ Answer to Question 1 is incorrect.', 'error'); return;
+    }
+    if (!correct2) {
+      showMsg('fpMsg2', '❌ Answer to Question 2 is incorrect.', 'error'); return;
+    }
+
+    // Move to step 3
+    document.getElementById('fpStep2').style.display = 'none';
+    document.getElementById('fpStep3').style.display = 'block';
+    document.getElementById('forgotModalTitle').textContent = '🔑 Reset Password — Step 3 of 3';
+  }
+
+  // Step 3: set new password
+  window.fpSetNewPassword = async function() {
+    const newPass = document.getElementById('fpNewPass').value.trim();
+    const confirmPass = document.getElementById('fpConfirmPass').value.trim();
+
+    if (!newPass || !confirmPass) { showMsg('fpMsg3', '⚠️ Please fill both fields!', 'error'); return; }
+    if (newPass.length < 6) { showMsg('fpMsg3', '❌ Password must be at least 6 characters!', 'error'); return; }
+    if (newPass !== confirmPass) { showMsg('fpMsg3', '❌ Passwords do not match!', 'error'); return; }
+
+    try {
+      // Sign in with old password to get a fresh credential, then update
+      const oldPassword = fpUserData.passwordPlain;
+      const userCred = await signInWithEmailAndPassword(auth, fpUserData.email, oldPassword);
+      await updatePassword(userCred.user, newPass);
+
+      // Update passwordPlain in Firestore too
+      await updateDoc(doc(db, "users", fpUserDocId), { passwordPlain: newPass });
+
+      await signOut(auth);
+
+      showMsg('fpMsg3', '✅ Password updated successfully! You can now log in.', 'success');
+      setTimeout(() => {
+        closeForgotModal();
+        showTab('login');
+      }, 1800);
+    } catch (err) {
+      showMsg('fpMsg3', '❌ ' + err.message, 'error');
+    }
+  }
+
+  // Close modal on overlay click
+  document.getElementById('forgotModal').addEventListener('click', function(e) {
+    if (e.target === this) closeForgotModal();
+  });
+
+  // Update label in forgot modal when role changes
+  document.getElementById('fpRole').addEventListener('change', function() {
+    document.getElementById('fpIdLabel').textContent = this.value === 'faculty' ? 'Faculty ID' : 'USN';
+    document.getElementById('fpId').placeholder = this.value === 'faculty' ? 'e.g. FAC2024001' : 'e.g. 1DS21CS001';
+  });
+</script>
+
+</body>
+</html>

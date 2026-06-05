@@ -1,0 +1,571 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Student Dashboard — DSCE</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<div class="dashboard">
+
+  <!-- ===== SIDEBAR ===== -->
+  <div class="sidebar">
+    <div class="sidebar-logo">
+      <div class="logo-text">🎓 AssignPortal</div>
+      <div class="logo-sub">DSCE · STUDENT</div>
+    </div>
+    <div class="sidebar-user">
+      <div class="user-name" id="sidebarName">Loading…</div>
+      <div class="user-role">Student</div>
+      <div class="user-id" id="sidebarUSN"></div>
+    </div>
+    <nav class="sidebar-nav">
+      <button class="nav-item active" onclick="navTo('assignments',this)"><span class="nav-icon">📚</span><span>Assignments</span></button>
+      <button class="nav-item" onclick="navTo('quiz',this)"><span class="nav-icon">❓</span><span>Quizzes</span></button>
+      <button class="nav-item" onclick="navTo('results',this)"><span class="nav-icon">⭐</span><span>My Results</span></button>
+      <button class="nav-item" onclick="navTo('analytics',this)"><span class="nav-icon">📊</span><span>Analytics</span></button>
+    </nav>
+    <div class="sidebar-bottom">
+      <button class="nav-item" onclick="logoutUser()"><span class="nav-icon">🚪</span><span>Logout</span></button>
+    </div>
+  </div>
+
+  <!-- ===== MAIN CONTENT ===== -->
+  <div class="main-content">
+
+    <!-- ======= ASSIGNMENTS ======= -->
+    <div id="sec-assignments" class="page-section active">
+      <div class="page-header">
+        <h2>📚 Assignments</h2>
+        <p>View and submit your assignments</p>
+      </div>
+      <div id="assignmentList"><div class="loading"></div></div>
+    </div>
+
+    <!-- ======= QUIZ ======= -->
+    <div id="sec-quiz" class="page-section">
+      <div class="page-header">
+        <h2>❓ Quizzes</h2>
+        <p>Attempt available quizzes</p>
+      </div>
+      <div id="quizList"><div class="loading"></div></div>
+    </div>
+
+    <!-- ======= RESULTS ======= -->
+    <div id="sec-results" class="page-section">
+      <div class="page-header">
+        <h2>⭐ My Results</h2>
+        <p>View your grades and feedback</p>
+      </div>
+      <div id="resultsList"><div class="loading"></div></div>
+    </div>
+
+    <!-- ======= ANALYTICS ======= -->
+    <div id="sec-analytics" class="page-section">
+      <div class="page-header">
+        <h2>📊 My Analytics</h2>
+        <p>Your performance overview</p>
+      </div>
+      <div class="stats-grid" id="myStats">
+        <div class="stat-card blue"><div class="stat-icon">📋</div><div class="stat-num" id="statTotal">—</div><div class="stat-label">Assignments Submitted</div></div>
+        <div class="stat-card green"><div class="stat-icon">✅</div><div class="stat-num" id="statGraded">—</div><div class="stat-label">Graded</div></div>
+        <div class="stat-card purple"><div class="stat-icon">📊</div><div class="stat-num" id="statAvg">—</div><div class="stat-label">Average Marks</div></div>
+        <div class="stat-card warn"><div class="stat-icon">🏆</div><div class="stat-num" id="statBest">—</div><div class="stat-label">Best Score</div></div>
+      </div>
+      <div class="card">
+        <div class="card-header"><h3><span class="icon">📚</span> Assignment Performance by Subject</h3></div>
+        <div id="myChartContainer">
+          <div class="empty-state"><div class="empty-icon">📊</div><p>Submit and get graded to see analytics</p></div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+</div>
+
+<!-- ===== QUIZ MODAL ===== -->
+<div class="modal-overlay" id="quizModal">
+  <div class="modal" style="width:680px">
+    <div class="modal-header">
+      <h3 id="quizModalTitle">Quiz</h3>
+      <div id="quizTimerDisplay" class="timer-display" style="display:none;min-width:120px;text-align:center;padding:8px 16px;font-size:18px;"></div>
+    </div>
+    <div id="quizModalBody"></div>
+  </div>
+</div>
+
+<script src="script.js"></script>
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+  import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+  import { getFirestore, collection, addDoc, getDocs, getDoc, doc, query, where, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+
+  const firebaseConfig = {
+    apiKey: "AIzaSyAYZ0IvidFdhrfaEeG4Y2w9M50NtWMvBFU",
+    authDomain: "assignment-portal-a11f7.firebaseapp.com",
+    projectId: "assignment-portal-a11f7",
+    storageBucket: "assignment-portal-a11f7.firebasestorage.app",
+    messagingSenderId: "186376623641",
+    appId: "1:186376623641:web:bf7d23f976440f2aac7c88"
+  };
+
+  const app = initializeApp(firebaseConfig);
+  const auth = getAuth(app);
+  const db = getFirestore(app);
+
+  let currentUser = null, currentStudent = null;
+  let allAssignments = [], allQuizzes = [], mySubmissions = [], myQuizSubs = [];
+  let quizTimer = null, quizEndTime = null, activeQuizId = null;
+
+  // ======= AUTH =======
+  onAuthStateChanged(auth, async (user) => {
+    if (!user) { window.location.href = 'index.html'; return; }
+    currentUser = user;
+    const uDoc = await getDoc(doc(db, "users", user.uid));
+    if (!uDoc.exists() || uDoc.data().role !== 'student') { window.location.href = 'index.html'; return; }
+    currentStudent = uDoc.data();
+    document.getElementById('sidebarName').textContent = currentStudent.name;
+    document.getElementById('sidebarUSN').textContent = currentStudent.usn || '';
+    await loadAllData();
+  });
+
+  // ======= NAVIGATION =======
+  window.navTo = function(sec, btn) {
+    document.querySelectorAll('.page-section').forEach(el => el.classList.remove('active'));
+    document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
+    document.getElementById('sec-' + sec).classList.add('active');
+    if (btn) btn.classList.add('active');
+    if (sec === 'results') renderResults();
+    if (sec === 'analytics') renderAnalytics();
+  }
+
+  // ======= LOAD DATA =======
+  async function loadAllData() {
+    const assignSnap = await getDocs(collection(db, "assignments"));
+    const allAssignRaw = assignSnap.docs.map(d => ({ id: d.id, ...d.data() }));
+    // Filter: show assignment if semester matches student OR assignment has no semester
+    allAssignments = allAssignRaw.filter(a => !a.semester || String(a.semester) === String(currentStudent.semester));
+
+    const quizSnap = await getDocs(collection(db, "quizzes"));
+    const allQuizRaw = quizSnap.docs.map(d => ({ id: d.id, ...d.data() }));
+    // Filter: show quiz if semester matches student OR quiz has no semester
+    allQuizzes = allQuizRaw.filter(q => !q.semester || String(q.semester) === String(currentStudent.semester));
+
+    const subQ = query(collection(db, "submissions"), where("studentId", "==", currentUser.uid));
+    const subSnap = await getDocs(subQ);
+    mySubmissions = subSnap.docs.map(d => ({ id: d.id, ...d.data() })).filter(s => s.assignmentId);
+    myQuizSubs = subSnap.docs.map(d => ({ id: d.id, ...d.data() })).filter(s => s.quizId);
+
+    renderAssignments();
+    renderQuizzes();
+  }
+
+  // ======= RENDER ASSIGNMENTS =======
+  function renderAssignments() {
+    const container = document.getElementById('assignmentList');
+    const today = new Date().toISOString().split('T')[0];
+
+    if (allAssignments.length === 0) {
+      container.innerHTML = '<div class="empty-state"><div class="empty-icon">📭</div><p>No assignments available yet</p></div>'; return;
+    }
+
+    container.innerHTML = allAssignments.map(a => {
+      const sub = mySubmissions.find(s => s.assignmentId === a.id);
+      const alreadySubmitted = !!sub;
+      const isExpired = a.deadline < today;
+      const canSubmit = !alreadySubmitted && (!isExpired || a.allowLateSubmit);
+
+      let actionHTML = '';
+      if (alreadySubmitted) {
+        actionHTML = `<span class="badge badge-green">✅ Submitted on ${fmtDate(sub.submittedAt)}</span>`;
+      } else if (isExpired && !a.allowLateSubmit) {
+        actionHTML = `<span class="badge badge-red">❌ Deadline Passed</span>`;
+      } else {
+        const types = a.allowedTypes || ['text'];
+        const fileAccept = buildFileAccept(types);
+        const showFile = types.some(t => ['pdf','doc','image','certificate','casestudy'].includes(t));
+        const showText = types.includes('text');
+
+        actionHTML = `
+          ${showText ? `<div class="form-group">
+            <label>Your Text Answer</label>
+            <textarea id="ans_${a.id}" placeholder="Type your answer here…"></textarea>
+          </div>` : ''}
+          ${showFile ? `<div class="form-group">
+            <label>Upload File (${fileAccept.label})</label>
+            <input type="file" id="file_${a.id}" accept="${fileAccept.accept}" />
+          </div>` : ''}
+          ${isExpired ? `<div class="msg show info" style="margin-bottom:10px;">⚠️ Late submission — deadline has passed</div>` : ''}
+          <button class="btn-primary" style="max-width:220px;" onclick="submitAssignment('${a.id}')">📤 Submit Assignment</button>
+          <div id="subMsg_${a.id}" class="msg"></div>
+        `;
+      }
+
+      return `<div class="item-card">
+        <div class="item-card-header">
+          <h4>${a.title}</h4>
+          <div style="display:flex;gap:6px;flex-wrap:wrap;">
+            <span class="badge badge-blue">📖 ${a.subject}</span>
+            <span class="badge ${isExpired ? 'badge-red' : 'badge-green'}">${isExpired ? '⏰ Expired' : '🟢 Active'}</span>
+          </div>
+        </div>
+        <div class="item-meta">
+          <span class="meta-pill">📅 Due: ${a.deadline}</span>
+          <span class="meta-pill">🏆 Max: ${a.maxMarks || 100} marks</span>
+          <span class="meta-pill">👨‍🏫 ${a.facultyName || 'Faculty'}</span>
+        </div>
+        <p style="font-size:13px;color:var(--text);margin-bottom:14px;line-height:1.6;">${a.desc}</p>
+        ${actionHTML}
+      </div>`;
+    }).join('');
+  }
+
+  function buildFileAccept(types) {
+    const parts = [], labels = [];
+    if (types.includes('pdf')) { parts.push('.pdf'); labels.push('PDF'); }
+    if (types.includes('doc')) { parts.push('.doc,.docx'); labels.push('DOC'); }
+    if (types.includes('image') || types.includes('certificate')) { parts.push('image/*'); labels.push('Images'); }
+    if (types.includes('casestudy')) { parts.push('.pdf,.doc,.docx,.ppt,.pptx'); labels.push('PPT'); }
+    return { accept: parts.join(',') || '*', label: labels.join(', ') || 'Any' };
+  }
+
+  // ======= SUBMIT ASSIGNMENT =======
+  window.submitAssignment = async function(assignId) {
+    const assign = allAssignments.find(a => a.id === assignId);
+    const textEl = document.getElementById(`ans_${assignId}`);
+    const fileEl = document.getElementById(`file_${assignId}`);
+    const answer = textEl ? textEl.value.trim() : '';
+    const file = fileEl && fileEl.files[0] ? fileEl.files[0] : null;
+
+    if (!answer && !file) {
+      showMsg(`subMsg_${assignId}`, '⚠️ Please provide an answer or upload a file!', 'error'); return;
+    }
+
+    let fileData = null, fileName = null, fileType = null;
+    if (file) {
+      if (file.size > 5 * 1024 * 1024) { showMsg(`subMsg_${assignId}`, '❌ File too large! Max 5MB.', 'error'); return; }
+      fileData = await toBase64(file);
+      fileName = file.name;
+      fileType = file.type;
+    }
+
+    try {
+      await addDoc(collection(db, "submissions"), {
+        assignmentId: assignId,
+        studentId: currentUser.uid,
+        answer: answer || '',
+        fileData, fileName, fileType,
+        submittedAt: serverTimestamp(),
+        marks: null,
+        feedback: null
+      });
+      showMsg(`subMsg_${assignId}`, '✅ Submitted successfully!', 'success');
+      await loadAllData();
+    } catch (err) {
+      showMsg(`subMsg_${assignId}`, '❌ ' + err.message, 'error');
+    }
+  }
+
+  function toBase64(file) {
+    return new Promise((res, rej) => {
+      const r = new FileReader();
+      r.onload = () => res(r.result);
+      r.onerror = rej;
+      r.readAsDataURL(file);
+    });
+  }
+
+  function showMsg(id, text, type) {
+    const el = document.getElementById(id);
+    if (!el) return;
+    el.textContent = text;
+    el.className = `msg show ${type}`;
+  }
+
+  // ======= RENDER QUIZZES =======
+  function renderQuizzes() {
+    const container = document.getElementById('quizList');
+    if (allQuizzes.length === 0) {
+      container.innerHTML = '<div class="empty-state"><div class="empty-icon">❓</div><p>No quizzes available yet</p></div>'; return;
+    }
+
+    container.innerHTML = allQuizzes.map(q => {
+      const sub = myQuizSubs.find(s => s.quizId === q.id);
+      const attempted = !!sub;
+
+      return `<div class="item-card">
+        <div class="item-card-header">
+          <h4>${q.title}</h4>
+          <span class="badge badge-purple">❓ Quiz</span>
+        </div>
+        <div class="item-meta">
+          <span class="meta-pill">📖 ${q.subject}</span>
+          <span class="meta-pill">⏱ ${q.timer} min</span>
+          <span class="meta-pill">🏆 ${q.maxMarks} marks</span>
+          <span class="meta-pill">❓ ${q.questions?.length || 0} questions</span>
+        </div>
+        ${attempted
+          ? `<span class="badge badge-green">✅ Attempted</span>`
+          : `<button class="btn-primary" style="max-width:200px;margin-top:10px;" onclick="startQuiz('${q.id}')">▶️ Start Quiz</button>`
+        }
+      </div>`;
+    }).join('');
+  }
+
+  // ======= QUIZ =======
+  window.startQuiz = function(quizId) {
+    const quiz = allQuizzes.find(q => q.id === quizId);
+    if (!quiz) return;
+    activeQuizId = quizId;
+
+    document.getElementById('quizModalTitle').textContent = quiz.title;
+    const timerEl = document.getElementById('quizTimerDisplay');
+    timerEl.style.display = 'block';
+
+    // Build questions
+    const body = document.getElementById('quizModalBody');
+    body.innerHTML = quiz.questions.map((q, qi) => `
+      <div class="item-card" style="margin-bottom:12px;" id="quizQ_${qi}">
+        <p style="font-weight:700;margin-bottom:10px;font-size:14px;">Q${qi+1}. ${q.qText} <span style="color:var(--text-muted);font-weight:400;">(${q.qMarks} mark${q.qMarks>1?'s':''})</span></p>
+        ${q.opts.map((opt, oi) => `
+          <label style="display:flex;align-items:center;gap:10px;padding:8px 12px;border-radius:8px;cursor:pointer;transition:0.2s;margin-bottom:4px;background:var(--bg-input);border:1px solid var(--border);" 
+            onmouseover="this.style.borderColor='var(--accent)'" onmouseout="this.style.borderColor='var(--border)'">
+            <input type="${q.qType === 'mcq' ? 'radio' : 'checkbox'}" 
+              name="q_${qi}" value="${oi}" 
+              style="width:auto;margin:0;accent-color:var(--accent);" />
+            <span style="font-size:13px;">${opt}</span>
+          </label>`).join('')}
+      </div>`).join('') +
+      `<button class="btn-primary" onclick="submitQuiz('${quizId}')">📤 Submit Quiz</button>
+       <div id="quizSubMsg" class="msg"></div>`;
+
+    document.getElementById('quizModal').classList.add('open');
+
+    // Start timer
+    const durationMs = quiz.timer * 60 * 1000;
+    quizEndTime = Date.now() + durationMs;
+    updateTimer(timerEl);
+    quizTimer = setInterval(() => {
+      const remaining = quizEndTime - Date.now();
+      if (remaining <= 0) {
+        clearInterval(quizTimer);
+        timerEl.textContent = '00:00';
+        timerEl.classList.add('urgent');
+        submitQuiz(quizId, true);
+      } else {
+        updateTimer(timerEl, remaining);
+      }
+    }, 1000);
+  }
+
+  function updateTimer(el, msLeft) {
+    const ms = msLeft !== undefined ? msLeft : (quizEndTime - Date.now());
+    const m = Math.floor(ms / 60000);
+    const s = Math.floor((ms % 60000) / 1000);
+    el.textContent = `${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
+    if (ms < 60000) el.classList.add('urgent');
+  }
+
+  window.submitQuiz = async function(quizId, autoSubmit = false) {
+    clearInterval(quizTimer);
+    const quiz = allQuizzes.find(q => q.id === quizId);
+    if (!quiz) return;
+
+    // Collect answers & auto-grade
+    let totalMarks = 0;
+    const answers = quiz.questions.map((q, qi) => {
+      const selected = Array.from(document.querySelectorAll(`[name="q_${qi}"]:checked`)).map(el => parseInt(el.value));
+      const isCorrect = q.correct.length === selected.length && q.correct.every(c => selected.includes(c-1));
+      if (isCorrect) totalMarks += q.qMarks;
+      return { question: q.qText, selected, correct: q.correct, isCorrect };
+    });
+
+    try {
+      await addDoc(collection(db, "submissions"), {
+        quizId,
+        studentId: currentUser.uid,
+        answers,
+        marks: totalMarks,
+        maxMarks: quiz.maxMarks,
+        feedback: getMarksSlab(totalMarks, quiz.maxMarks).label.replace(/[🏆⭐✅👍❌]/g,'').trim(),
+        submittedAt: serverTimestamp(),
+        autoGraded: true
+      });
+
+      // Show result in modal
+      const slab = getMarksSlab(totalMarks, quiz.maxMarks);
+      document.getElementById('quizModalBody').innerHTML = `
+        <div style="text-align:center;padding:30px 20px;">
+          <div style="font-size:48px;margin-bottom:16px;">${totalMarks >= quiz.maxMarks * 0.5 ? '🎉' : '📚'}</div>
+          <h3 style="font-size:20px;margin-bottom:8px;">${autoSubmit ? 'Time\'s up! Auto-submitted.' : 'Quiz Submitted!'}</h3>
+          ${quiz.showMarks ? `<p style="font-size:32px;font-weight:800;color:var(--accent);margin:16px 0;">${totalMarks} / ${quiz.maxMarks}</p>
+          <span class="badge" style="font-size:14px;padding:8px 18px;color:${slab.color};background:${slab.color}20;border-color:${slab.color}40;">${slab.label}</span>` : `<p style="color:var(--text-muted);">Marks will be revealed on the publish date.</p>`}
+          ${quiz.showAnswer ? `<div style="margin-top:20px;text-align:left;">
+            <h4 style="margin-bottom:12px;font-size:14px;color:var(--text-muted);">CORRECT ANSWERS</h4>
+            ${quiz.questions.map((q, qi) => {
+              const a = answers[qi];
+              return `<div class="item-card" style="margin-bottom:8px;">
+                <p style="font-size:13px;font-weight:600;">${q.qText}</p>
+                <p style="font-size:12px;color:${a.isCorrect ? 'var(--success)' : 'var(--danger)'};margin-top:4px;">
+                  ${a.isCorrect ? '✅ Correct' : `❌ Incorrect — Correct: ${q.correct.map(c => q.opts[c-1]).join(', ')}`}
+                </p>
+              </div>`;
+            }).join('')}
+          </div>` : ''}
+          <button class="btn-primary" style="margin-top:20px;max-width:160px;" onclick="closeQuizModal()">✔ Done</button>
+        </div>`;
+
+      await loadAllData();
+    } catch (err) {
+      showMsg('quizSubMsg', '❌ ' + err.message, 'error');
+    }
+  }
+
+  window.closeQuizModal = function() {
+    clearInterval(quizTimer);
+    document.getElementById('quizModal').classList.remove('open');
+    document.getElementById('quizTimerDisplay').classList.remove('urgent');
+    navTo('quiz', document.querySelector('.nav-item:nth-child(2)'));
+  }
+
+  // ======= RESULTS =======
+  function renderResults() {
+    const container = document.getElementById('resultsList');
+    const today = new Date().toISOString().split('T')[0];
+
+    const allMySubs = [...mySubmissions, ...myQuizSubs];
+    if (allMySubs.length === 0) {
+      container.innerHTML = '<div class="empty-state"><div class="empty-icon">📭</div><p>No submissions yet</p></div>'; return;
+    }
+
+    container.innerHTML = allMySubs.map(s => {
+      const item = s.assignmentId
+        ? allAssignments.find(a => a.id === s.assignmentId)
+        : allQuizzes.find(q => q.id === s.quizId);
+      if (!item) return '';
+
+      const maxMarks = item.maxMarks || 100;
+      const publishDate = item.publishDate || '';
+      const isPublished = !publishDate || publishDate <= today;
+      const slab = getMarksSlab(s.marks, maxMarks);
+
+      return `<div class="item-card">
+        <div class="item-card-header">
+          <h4>${item.title}</h4>
+          <span class="badge badge-blue">📖 ${item.subject}</span>
+        </div>
+        <div class="item-meta">
+          <span class="meta-pill">${s.assignmentId ? '📚 Assignment' : '❓ Quiz'}</span>
+          <span class="meta-pill">🕐 ${fmtDate(s.submittedAt)}</span>
+        </div>
+        ${!isPublished
+          ? `<div class="msg show info">🔒 Results will be published on ${publishDate}</div>`
+          : s.marks !== null && s.marks !== undefined
+            ? `<div style="margin-top:10px;">
+                <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:10px;">
+                  <span style="font-size:22px;font-weight:800;color:var(--text);">${s.marks} <span style="font-size:14px;font-weight:400;color:var(--text-muted);">/ ${maxMarks}</span></span>
+                  <span class="badge" style="color:${slab.color};background:${slab.color}20;border-color:${slab.color}40;font-size:13px;">${slab.label}</span>
+                </div>
+                <div class="progress-bar"><div class="progress-fill" style="width:${Math.min(100,(s.marks/maxMarks)*100)}%;background:${slab.color};"></div></div>
+                <p style="font-size:13px;color:var(--text-muted);margin-top:10px;">💬 ${s.feedback || 'No feedback'}</p>
+              </div>`
+            : `<span class="badge badge-yellow">⏳ Not graded yet</span>`
+        }
+      </div>`;
+    }).join('');
+  }
+
+  // ======= ANALYTICS =======
+  function renderAnalytics() {
+    const today = new Date().toISOString().split('T')[0];
+    const allMySubs = [...mySubmissions, ...myQuizSubs];
+    const graded = allMySubs.filter(s => s.marks !== null && s.marks !== undefined);
+
+    document.getElementById('statTotal').textContent = allMySubs.length;
+    document.getElementById('statGraded').textContent = graded.length;
+
+    if (graded.length === 0) return;
+
+    const getItem = s => s.assignmentId
+      ? allAssignments.find(a => a.id === s.assignmentId)
+      : allQuizzes.find(q => q.id === s.quizId);
+
+    const getMax = s => getItem(s)?.maxMarks || 100;
+    const pcts = graded.map(s => (s.marks / getMax(s)) * 100);
+    const avg = Math.round(pcts.reduce((a,b) => a+b, 0) / pcts.length);
+    document.getElementById('statAvg').textContent = avg + '%';
+    document.getElementById('statBest').textContent = Math.round(Math.max(...pcts)) + '%';
+
+    // Group by subject
+    const subjectMap = {};
+    graded.forEach(s => {
+      const item = getItem(s);
+      if (!item) return;
+      const subj = item.subject || 'Unknown';
+      if (!subjectMap[subj]) subjectMap[subj] = [];
+      subjectMap[subj].push({ sub: s, item, type: s.assignmentId ? 'Assignment' : 'Quiz' });
+    });
+
+    const container = document.getElementById('myChartContainer');
+    if (Object.keys(subjectMap).length === 0) {
+      container.innerHTML = '<div class="empty-state"><div class="empty-icon">📊</div><p>No graded submissions yet</p></div>';
+      return;
+    }
+
+    container.innerHTML = Object.entries(subjectMap).map(([subject, entries]) => {
+      const rows = entries.map(({ sub, item, type }) => {
+        const maxM = item.maxMarks || 100;
+        const pct = Math.round((sub.marks / maxM) * 100);
+        const slab = getMarksSlab(sub.marks, maxM);
+        return `<div class="item-card" style="margin-bottom:8px;">
+          <div class="item-card-header">
+            <div>
+              <span style="font-size:13px;font-weight:600;">${item.title}</span>
+              <span class="meta-pill" style="margin-left:8px;font-size:11px;">${type}</span>
+            </div>
+            <span class="badge" style="color:${slab.color};background:${slab.color}20;border-color:${slab.color}40;">${slab.label}</span>
+          </div>
+          <div style="margin-top:8px;">
+            <div style="display:flex;align-items:center;gap:10px;margin-bottom:6px;">
+              <span style="font-size:14px;font-weight:700;">${sub.marks} / ${maxM}</span>
+              <span style="font-size:12px;color:var(--text-muted);">(${pct}%)</span>
+            </div>
+            <div class="progress-bar"><div class="progress-fill" style="width:${Math.min(100,pct)}%;background:${slab.color};"></div></div>
+          </div>
+        </div>`;
+      }).join('');
+
+      const subjAvg = Math.round(entries.reduce((sum, { sub, item }) => sum + (sub.marks / (item.maxMarks || 100)) * 100, 0) / entries.length);
+      return `<div style="margin-bottom:18px;">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;">
+          <h4 style="font-size:14px;font-weight:700;color:var(--accent);">📖 ${subject}</h4>
+          <span class="meta-pill">Avg: ${subjAvg}%</span>
+        </div>
+        ${rows}
+      </div>`;
+    }).join('');
+  }
+
+  // ======= LOGOUT =======
+  window.logoutUser = async function() {
+    try {
+      await signOut(auth);
+      setTimeout(() => { window.location.href = 'index.html'; }, 100);
+    } catch (err) {
+      console.error('Logout error:', err);
+      alert('Logout failed: ' + (err?.message || 'Unknown error'));
+      window.location.href = 'index.html';
+    }
+  }
+
+  // Close quiz modal on overlay click (only if not in quiz)
+  document.getElementById('quizModal').addEventListener('click', function(e) {
+    if (e.target === this && !activeQuizId) this.classList.remove('open');
+  });
+</script>
+
+</body>
+</html>
