@@ -31,6 +31,7 @@
           <option value="">— Select Role —</option>
           <option value="student">Student</option>
           <option value="faculty">Faculty</option>
+          <option value="admin">Administrator</option>
         </select>
       </div>
 
@@ -284,6 +285,7 @@
     const lbl = document.getElementById('loginIdLabel');
     if (role === 'student') { grp.style.display = 'block'; lbl.textContent = 'USN'; document.getElementById('loginId').placeholder = 'e.g. 1DS21CS001'; }
     else if (role === 'faculty') { grp.style.display = 'block'; lbl.textContent = 'Faculty ID'; document.getElementById('loginId').placeholder = 'e.g. FAC2024001'; }
+    else if (role === 'admin') { grp.style.display = 'block'; lbl.textContent = 'Admin ID'; document.getElementById('loginId').placeholder = 'e.g. ADMIN001'; }
     else { grp.style.display = 'none'; }
   }
 
@@ -386,12 +388,16 @@
     }
 
     try {
-      const field = role === 'student' ? 'usn' : 'facultyId';
+      let field;
+      if (role === 'student') field = 'usn';
+      else if (role === 'faculty') field = 'facultyId';
+      else if (role === 'admin') field = 'adminId';
+
       const q = query(collection(db, "users"), where(field, "==", loginId), where("role", "==", role));
       const snap = await getDocs(q);
 
       if (snap.empty) {
-        showMsg('loginMsg', `❌ No ${role} found with that ${role === 'student' ? 'USN' : 'Faculty ID'}!`, 'error'); return;
+        showMsg('loginMsg', `❌ No ${role} found with that ${role === 'student' ? 'USN' : role === 'faculty' ? 'Faculty ID' : 'Admin ID'}!`, 'error'); return;
       }
 
       const userData = snap.docs[0].data();
@@ -403,7 +409,9 @@
       document.getElementById('loginPassword').value = '';
 
       setTimeout(() => {
-        window.location.href = role === 'faculty' ? 'faculty.html' : 'student.html';
+        if (role === 'faculty') window.location.href = 'faculty.html';
+        else if (role === 'admin') window.location.href = 'admin.html';
+        else window.location.href = 'student.html';
       }, 900);
     } catch (err) {
       if (['auth/invalid-credential','auth/wrong-password','auth/user-not-found'].includes(err.code)) {

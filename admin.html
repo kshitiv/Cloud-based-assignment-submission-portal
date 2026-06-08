@@ -1,0 +1,1007 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Admin Dashboard — DSCE</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<div class="dashboard">
+
+  <!-- ===== SIDEBAR ===== -->
+  <div class="sidebar">
+    <div class="sidebar-logo">
+      <div class="logo-text">🎓 AssignPortal</div>
+      <div class="logo-sub">DSCE · ADMIN</div>
+    </div>
+    <div class="sidebar-user">
+      <div class="user-name" id="sidebarName">Loading…</div>
+      <div class="user-role">Administrator</div>
+      <div class="user-id" id="sidebarId"></div>
+    </div>
+    <nav class="sidebar-nav">
+      <button class="nav-item active" onclick="navTo('overview',this)"><span class="nav-icon">🏠</span><span>Overview</span></button>
+      <button class="nav-item" onclick="navTo('students',this)"><span class="nav-icon">🎓</span><span>Students</span></button>
+      <button class="nav-item" onclick="navTo('faculty',this)"><span class="nav-icon">👨‍🏫</span><span>Faculty</span></button>
+      <button class="nav-item" onclick="navTo('assignments',this)"><span class="nav-icon">📚</span><span>Assignments</span></button>
+      <button class="nav-item" onclick="navTo('quizzes',this)"><span class="nav-icon">❓</span><span>Quizzes</span></button>
+      <button class="nav-item" onclick="navTo('submissions',this)"><span class="nav-icon">📋</span><span>Submissions</span></button>
+      <button class="nav-item" onclick="navTo('database',this)"><span class="nav-icon">⬇️</span><span>Download DB</span></button>
+    </nav>
+    <div class="sidebar-bottom">
+      <button class="nav-item" onclick="logoutAdmin()"><span class="nav-icon">🚪</span><span>Logout</span></button>
+    </div>
+  </div>
+
+  <!-- ===== MAIN CONTENT ===== -->
+  <div class="main-content">
+
+    <!-- ======= OVERVIEW ======= -->
+    <div id="sec-overview" class="page-section active">
+      <div class="page-header">
+        <h2>🏠 Admin Overview</h2>
+        <p>Full portal statistics and at-a-glance summary</p>
+      </div>
+      <div class="stats-grid" id="adminStatsGrid">
+        <div class="stat-card blue"><div class="stat-icon">🎓</div><div class="stat-num" id="statStudents">—</div><div class="stat-label">Total Students</div></div>
+        <div class="stat-card purple"><div class="stat-icon">👨‍🏫</div><div class="stat-num" id="statFaculty">—</div><div class="stat-label">Total Faculty</div></div>
+        <div class="stat-card green"><div class="stat-icon">📚</div><div class="stat-num" id="statAssign">—</div><div class="stat-label">Assignments</div></div>
+        <div class="stat-card warn"><div class="stat-icon">❓</div><div class="stat-num" id="statQuiz">—</div><div class="stat-label">Quizzes</div></div>
+        <div class="stat-card blue"><div class="stat-icon">📋</div><div class="stat-num" id="statSubs">—</div><div class="stat-label">Total Submissions</div></div>
+        <div class="stat-card purple"><div class="stat-icon">⏳</div><div class="stat-num" id="statPending">—</div><div class="stat-label">Pending Grading</div></div>
+      </div>
+
+      <!-- Subject filter -->
+      <div class="card" style="margin-bottom:20px;">
+        <div class="card-header">
+          <h3><span class="icon">🔍</span> Filter by Subject</h3>
+          <select id="overviewSubjectFilter" onchange="applySubjectFilter()" style="padding:8px 14px;font-size:13px;min-width:220px;">
+            <option value="">— All Subjects —</option>
+          </select>
+        </div>
+        <div id="subjectFilterInfo" style="color:var(--text-muted);font-size:13px;padding:10px 0 0;">Select a subject to filter all data below.</div>
+      </div>
+
+      <div class="card">
+        <div class="card-header"><h3><span class="icon">📋</span> Recent Submissions (All)</h3></div>
+        <div id="adminRecentSubs"><div class="loading"></div></div>
+      </div>
+    </div>
+
+    <!-- ======= STUDENTS ======= -->
+    <div id="sec-students" class="page-section">
+      <div class="page-header">
+        <h2>🎓 Students</h2>
+        <p>All registered students and their details</p>
+      </div>
+      <div class="card">
+        <div class="card-header">
+          <h3><span class="icon">👥</span> Student Directory</h3>
+          <div style="display:flex;gap:8px;flex-wrap:wrap;">
+            <select id="studentSubjectFilter" onchange="renderStudents()" style="padding:8px 12px;font-size:13px;">
+              <option value="">— All Subjects —</option>
+            </select>
+            <select id="studentDeptFilter" onchange="renderStudents()" style="padding:8px 12px;font-size:13px;">
+              <option value="">— All Departments —</option>
+            </select>
+            <select id="studentSemFilter" onchange="renderStudents()" style="padding:8px 12px;font-size:13px;">
+              <option value="">— All Semesters —</option>
+              <option>1</option><option>2</option><option>3</option><option>4</option>
+              <option>5</option><option>6</option><option>7</option><option>8</option>
+            </select>
+            <input type="text" id="studentSearch" placeholder="Search name / USN…" oninput="renderStudents()" style="padding:8px 12px;font-size:13px;width:180px;" />
+          </div>
+        </div>
+        <div id="studentList"><div class="loading"></div></div>
+      </div>
+    </div>
+
+    <!-- ======= FACULTY ======= -->
+    <div id="sec-faculty" class="page-section">
+      <div class="page-header">
+        <h2>👨‍🏫 Faculty</h2>
+        <p>All registered faculty members and their details</p>
+      </div>
+      <div class="card">
+        <div class="card-header">
+          <h3><span class="icon">👥</span> Faculty Directory</h3>
+          <div style="display:flex;gap:8px;flex-wrap:wrap;">
+            <select id="facultySubjectFilter" onchange="renderFaculty()" style="padding:8px 12px;font-size:13px;">
+              <option value="">— All Subjects —</option>
+            </select>
+            <select id="facultyDeptFilter" onchange="renderFaculty()" style="padding:8px 12px;font-size:13px;">
+              <option value="">— All Departments —</option>
+            </select>
+            <input type="text" id="facultySearch" placeholder="Search name / ID…" oninput="renderFaculty()" style="padding:8px 12px;font-size:13px;width:180px;" />
+          </div>
+        </div>
+        <div id="facultyList"><div class="loading"></div></div>
+      </div>
+    </div>
+
+    <!-- ======= ASSIGNMENTS ======= -->
+    <div id="sec-assignments" class="page-section">
+      <div class="page-header">
+        <h2>📚 All Assignments</h2>
+        <p>View all assignments posted by all faculty</p>
+      </div>
+      <div class="card">
+        <div class="card-header">
+          <h3><span class="icon">📑</span> Assignment List</h3>
+          <div style="display:flex;gap:8px;flex-wrap:wrap;">
+            <select id="assignSubjectFilter" onchange="renderAssignments()" style="padding:8px 12px;font-size:13px;">
+              <option value="">— All Subjects —</option>
+            </select>
+            <select id="assignFacultyFilter" onchange="renderAssignments()" style="padding:8px 12px;font-size:13px;">
+              <option value="">— All Faculty —</option>
+            </select>
+            <input type="text" id="assignSearch" placeholder="Search title…" oninput="renderAssignments()" style="padding:8px 12px;font-size:13px;width:180px;" />
+          </div>
+        </div>
+        <div id="assignList"><div class="loading"></div></div>
+      </div>
+    </div>
+
+    <!-- ======= QUIZZES ======= -->
+    <div id="sec-quizzes" class="page-section">
+      <div class="page-header">
+        <h2>❓ All Quizzes</h2>
+        <p>View all quizzes created by all faculty</p>
+      </div>
+      <div class="card">
+        <div class="card-header">
+          <h3><span class="icon">📋</span> Quiz List</h3>
+          <div style="display:flex;gap:8px;flex-wrap:wrap;">
+            <select id="quizSubjectFilter" onchange="renderQuizzes()" style="padding:8px 12px;font-size:13px;">
+              <option value="">— All Subjects —</option>
+            </select>
+            <select id="quizFacultyFilter" onchange="renderQuizzes()" style="padding:8px 12px;font-size:13px;">
+              <option value="">— All Faculty —</option>
+            </select>
+            <input type="text" id="quizSearch" placeholder="Search title…" oninput="renderQuizzes()" style="padding:8px 12px;font-size:13px;width:180px;" />
+          </div>
+        </div>
+        <div id="quizList"><div class="loading"></div></div>
+      </div>
+    </div>
+
+    <!-- ======= SUBMISSIONS ======= -->
+    <div id="sec-submissions" class="page-section">
+      <div class="page-header">
+        <h2>📋 All Submissions</h2>
+        <p>View all student submissions across all faculty</p>
+      </div>
+      <div class="card">
+        <div class="card-header">
+          <h3><span class="icon">🗂️</span> Submissions</h3>
+          <div style="display:flex;gap:8px;flex-wrap:wrap;">
+            <select id="subSubjectFilter" onchange="renderSubmissions()" style="padding:8px 12px;font-size:13px;">
+              <option value="">— All Subjects —</option>
+            </select>
+            <select id="subTypeFilter" onchange="renderSubmissions()" style="padding:8px 12px;font-size:13px;">
+              <option value="">All Types</option>
+              <option value="assignment">Assignments</option>
+              <option value="quiz">Quizzes</option>
+            </select>
+            <select id="subStatusFilter" onchange="renderSubmissions()" style="padding:8px 12px;font-size:13px;">
+              <option value="">All Status</option>
+              <option value="graded">Graded</option>
+              <option value="pending">Pending</option>
+            </select>
+            <input type="text" id="subSearch" placeholder="Search student…" oninput="renderSubmissions()" style="padding:8px 12px;font-size:13px;width:160px;" />
+          </div>
+        </div>
+        <div id="subList"><div class="loading"></div></div>
+      </div>
+    </div>
+
+    <!-- ======= DOWNLOAD DATABASE ======= -->
+    <div id="sec-database" class="page-section">
+      <div class="page-header">
+        <h2>⬇️ Download Database</h2>
+        <p>Export full portal data to CSV for any subject or all subjects</p>
+      </div>
+
+      <div class="card">
+        <div class="card-header"><h3><span class="icon">🔍</span> Filter Options</h3></div>
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px;margin-bottom:14px;">
+          <div class="form-group">
+            <label>Subject Filter</label>
+            <select id="dlSubjectFilter" style="width:100%;">
+              <option value="">All Subjects</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Faculty Filter</label>
+            <select id="dlFacultyFilter" style="width:100%;">
+              <option value="">All Faculty</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Semester Filter</label>
+            <select id="dlSemFilter" style="width:100%;">
+              <option value="">All Semesters</option>
+              <option>1</option><option>2</option><option>3</option><option>4</option>
+              <option>5</option><option>6</option><option>7</option><option>8</option>
+            </select>
+          </div>
+        </div>
+        <div id="dlMsg" class="msg"></div>
+      </div>
+
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;">
+        <div class="card" style="text-align:center;cursor:pointer;" onclick="downloadDB('students')">
+          <div style="font-size:36px;margin-bottom:12px;">🎓</div>
+          <h3 style="margin-bottom:8px;font-size:15px;">Students Database</h3>
+          <p style="color:var(--text-muted);font-size:12px;margin-bottom:16px;">All student profiles, departments, semesters</p>
+          <button class="btn-primary" style="max-width:180px;margin:0 auto;">⬇️ Download CSV</button>
+        </div>
+        <div class="card" style="text-align:center;cursor:pointer;" onclick="downloadDB('faculty')">
+          <div style="font-size:36px;margin-bottom:12px;">👨‍🏫</div>
+          <h3 style="margin-bottom:8px;font-size:15px;">Faculty Database</h3>
+          <p style="color:var(--text-muted);font-size:12px;margin-bottom:16px;">All faculty profiles, departments, subjects</p>
+          <button class="btn-primary" style="max-width:180px;margin:0 auto;">⬇️ Download CSV</button>
+        </div>
+        <div class="card" style="text-align:center;cursor:pointer;" onclick="downloadDB('assignments')">
+          <div style="font-size:36px;margin-bottom:12px;">📚</div>
+          <h3 style="margin-bottom:8px;font-size:15px;">Assignment Submissions</h3>
+          <p style="color:var(--text-muted);font-size:12px;margin-bottom:16px;">All assignment submissions with grades</p>
+          <button class="btn-primary" style="max-width:180px;margin:0 auto;">⬇️ Download CSV</button>
+        </div>
+        <div class="card" style="text-align:center;cursor:pointer;" onclick="downloadDB('quizzes')">
+          <div style="font-size:36px;margin-bottom:12px;">❓</div>
+          <h3 style="margin-bottom:8px;font-size:15px;">Quiz Submissions</h3>
+          <p style="color:var(--text-muted);font-size:12px;margin-bottom:16px;">All quiz submissions with auto-grades</p>
+          <button class="btn-primary" style="max-width:180px;margin:0 auto;">⬇️ Download CSV</button>
+        </div>
+        <div class="card" style="text-align:center;cursor:pointer;" onclick="downloadDB('combined')">
+          <div style="font-size:36px;margin-bottom:12px;">🔗</div>
+          <h3 style="margin-bottom:8px;font-size:15px;">Combined Database</h3>
+          <p style="color:var(--text-muted);font-size:12px;margin-bottom:16px;">All submissions (assignments + quizzes)</p>
+          <button class="btn-primary" style="max-width:180px;margin:0 auto;">⬇️ Download CSV</button>
+        </div>
+        <div class="card" style="text-align:center;cursor:pointer;" onclick="downloadDB('full')">
+          <div style="font-size:36px;margin-bottom:12px;">💾</div>
+          <h3 style="margin-bottom:8px;font-size:15px;">Full Portal Export</h3>
+          <p style="color:var(--text-muted);font-size:12px;margin-bottom:16px;">Everything: users + all submissions</p>
+          <button class="btn-primary" style="max-width:180px;margin:0 auto;">⬇️ Download CSV</button>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- /main-content -->
+</div><!-- /dashboard -->
+
+<!-- ===== STUDENT DETAIL MODAL ===== -->
+<div class="modal-overlay" id="studentModal">
+  <div class="modal" style="width:640px;max-height:85vh;overflow-y:auto;">
+    <div class="modal-header">
+      <h3 id="studentModalTitle">Student Details</h3>
+      <button class="modal-close" onclick="document.getElementById('studentModal').classList.remove('open')">✕</button>
+    </div>
+    <div id="studentModalBody"></div>
+  </div>
+</div>
+
+<!-- ===== FACULTY DETAIL MODAL ===== -->
+<div class="modal-overlay" id="facultyModal">
+  <div class="modal" style="width:640px;max-height:85vh;overflow-y:auto;">
+    <div class="modal-header">
+      <h3 id="facultyModalTitle">Faculty Details</h3>
+      <button class="modal-close" onclick="document.getElementById('facultyModal').classList.remove('open')">✕</button>
+    </div>
+    <div id="facultyModalBody"></div>
+  </div>
+</div>
+
+<!-- ===== FIRST-TIME ADMIN SETUP OVERLAY ===== -->
+<div id="setupOverlay" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.85);z-index:9999;align-items:center;justify-content:center;">
+  <div style="background:var(--bg-card);border:1px solid var(--border);border-radius:20px;padding:36px;width:440px;max-width:95vw;">
+    <div style="text-align:center;margin-bottom:24px;">
+      <div style="font-size:40px;margin-bottom:12px;">🔐</div>
+      <h2 style="font-size:20px;font-weight:700;margin-bottom:8px;">Admin Account Setup</h2>
+      <p style="color:var(--text-muted);font-size:13px;">Your Firebase Auth account is ready but no admin profile exists yet in Firestore. Fill in the details below to complete setup.</p>
+    </div>
+    <div style="background:var(--bg-card2);border:1px solid var(--border);border-radius:10px;padding:12px 16px;margin-bottom:20px;font-size:12px;color:var(--text-muted);">
+      <div><strong style="color:var(--text);">UID:</strong> <span id="setupUid" style="font-family:monospace;font-size:11px;word-break:break-all;"></span></div>
+      <div style="margin-top:4px;"><strong style="color:var(--text);">Email:</strong> <span id="setupEmail"></span></div>
+    </div>
+    <div class="form-group">
+      <label>Full Name</label>
+      <input type="text" id="setupName" placeholder="e.g. Dr. Ramesh Babu" />
+    </div>
+    <div class="form-group">
+      <label>Admin ID</label>
+      <input type="text" id="setupAdminId" placeholder="e.g. ADMIN001" style="text-transform:uppercase;" />
+    </div>
+    <div id="setupMsg" class="msg"></div>
+    <button class="btn-primary" onclick="setupAdmin()" style="margin-top:8px;">✅ Create Admin Profile</button>
+    <button class="btn-secondary" onclick="logoutAdmin()" style="margin-top:10px;width:100%;">🚪 Logout & Go Back</button>
+  </div>
+</div>
+
+<script src="script.js"></script>
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+  import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+  import { getFirestore, collection, getDocs, getDoc, doc, query, where, setDoc } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+
+  const firebaseConfig = {
+    apiKey: "AIzaSyAYZ0IvidFdhrfaEeG4Y2w9M50NtWMvBFU",
+    authDomain: "assignment-portal-a11f7.firebaseapp.com",
+    projectId: "assignment-portal-a11f7",
+    storageBucket: "assignment-portal-a11f7.firebasestorage.app",
+    messagingSenderId: "186376623641",
+    appId: "1:186376623641:web:bf7d23f976440f2aac7c88"
+  };
+
+  const app = initializeApp(firebaseConfig);
+  const auth = getAuth(app);
+  const db = getFirestore(app);
+
+  let currentUser = null, currentAdmin = null;
+  let allStudents = [], allFacultyList = [], allAssignments = [], allQuizzes = [], allSubmissions = [];
+  let allSubjects = new Set();
+  let isLoggingOut = false;
+
+  // ======= AUTH =======
+  onAuthStateChanged(auth, async (user) => {
+    if (isLoggingOut) return;
+    if (!user) { window.location.href = 'index.html'; return; }
+    currentUser = user;
+    const uDoc = await getDoc(doc(db, "users", user.uid));
+    if (!uDoc.exists() || uDoc.data().role !== 'admin') {
+      // Show setup UI instead of redirecting — helps first-time admin bootstrap
+      document.getElementById('setupOverlay').style.display = 'flex';
+      document.getElementById('setupUid').textContent = user.uid;
+      document.getElementById('setupEmail').textContent = user.email;
+      return;
+    }
+    currentAdmin = uDoc.data();
+    document.getElementById('sidebarName').textContent = currentAdmin.name;
+    document.getElementById('sidebarId').textContent = currentAdmin.adminId || 'Admin';
+    await loadAllData();
+  });
+
+  // ======= NAVIGATION =======
+  window.navTo = function(sec, btn) {
+    document.querySelectorAll('.page-section').forEach(el => el.classList.remove('active'));
+    document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
+    document.getElementById('sec-' + sec).classList.add('active');
+    if (btn) btn.classList.add('active');
+    if (sec === 'students') renderStudents();
+    if (sec === 'faculty') renderFaculty();
+    if (sec === 'assignments') renderAssignments();
+    if (sec === 'quizzes') renderQuizzes();
+    if (sec === 'submissions') renderSubmissions();
+  }
+
+  // ======= LOAD ALL DATA =======
+  async function loadAllData() {
+    const [studSnap, facSnap, assignSnap, quizSnap, assignSubSnap, quizSubSnap] = await Promise.all([
+      getDocs(query(collection(db, "users"), where("role", "==", "student"))),
+      getDocs(query(collection(db, "users"), where("role", "==", "faculty"))),
+      getDocs(collection(db, "assignments")),
+      getDocs(collection(db, "quizzes")),
+      getDocs(collection(db, "assignment_submissions")),
+      getDocs(collection(db, "quiz_submissions"))
+    ]);
+
+    allStudents = studSnap.docs.map(d => ({ id: d.id, ...d.data() }));
+    allFacultyList = facSnap.docs.map(d => ({ id: d.id, ...d.data() }));
+    allAssignments = assignSnap.docs.map(d => ({ id: d.id, ...d.data() }));
+    allQuizzes = quizSnap.docs.map(d => ({ id: d.id, ...d.data() }));
+    const assignSubs = assignSubSnap.docs.map(d => ({ id: d.id, type: 'assignment', ...d.data() }));
+    const quizSubs = quizSubSnap.docs.map(d => ({ id: d.id, type: 'quiz', ...d.data() }));
+    allSubmissions = [...assignSubs, ...quizSubs];
+
+    // Build subject list from assignments, quizzes, faculty
+    allSubjects = new Set();
+    allAssignments.forEach(a => { if (a.subject) allSubjects.add(a.subject); });
+    allQuizzes.forEach(q => { if (q.subject) allSubjects.add(q.subject); });
+    allFacultyList.forEach(f => { (f.subjects || []).forEach(s => allSubjects.add(s)); });
+
+    populateSubjectDropdowns();
+    populateFacultyDropdowns();
+    populateDeptDropdowns();
+    loadOverview();
+  }
+
+  function populateSubjectDropdowns() {
+    const subs = [...allSubjects].sort();
+    const selIds = ['overviewSubjectFilter','studentSubjectFilter','facultySubjectFilter',
+                    'assignSubjectFilter','quizSubjectFilter','subSubjectFilter','dlSubjectFilter'];
+    selIds.forEach(id => {
+      const el = document.getElementById(id);
+      if (!el) return;
+      const cur = el.value;
+      el.innerHTML = `<option value="">— All Subjects —</option>` + subs.map(s => `<option value="${s}">${s}</option>`).join('');
+      if (cur) el.value = cur;
+    });
+  }
+
+  function populateFacultyDropdowns() {
+    const selIds = ['assignFacultyFilter','quizFacultyFilter','dlFacultyFilter'];
+    selIds.forEach(id => {
+      const el = document.getElementById(id);
+      if (!el) return;
+      el.innerHTML = `<option value="">— All Faculty —</option>` +
+        allFacultyList.map(f => `<option value="${f.id}">${f.name} (${f.facultyId || ''})</option>`).join('');
+    });
+  }
+
+  function populateDeptDropdowns() {
+    const depts = new Set();
+    allStudents.forEach(s => { if (s.department) depts.add(s.department); });
+    allFacultyList.forEach(f => { if (f.department) depts.add(f.department); });
+    const sorted = [...depts].sort();
+
+    ['studentDeptFilter','facultyDeptFilter'].forEach(id => {
+      const el = document.getElementById(id);
+      if (!el) return;
+      el.innerHTML = `<option value="">— All Departments —</option>` +
+        sorted.map(d => `<option value="${d}">${d}</option>`).join('');
+    });
+  }
+
+  // ======= OVERVIEW =======
+  function loadOverview() {
+    document.getElementById('statStudents').textContent = allStudents.length;
+    document.getElementById('statFaculty').textContent = allFacultyList.length;
+    document.getElementById('statAssign').textContent = allAssignments.length;
+    document.getElementById('statQuiz').textContent = allQuizzes.length;
+    document.getElementById('statSubs').textContent = allSubmissions.length;
+    const pending = allSubmissions.filter(s => s.marks === null || s.marks === undefined);
+    document.getElementById('statPending').textContent = pending.length;
+    renderRecentSubs(allSubmissions);
+  }
+
+  function renderRecentSubs(subs) {
+    const recent = [...subs].sort((a,b) => {
+      return (b.submittedAt?.seconds || 0) - (a.submittedAt?.seconds || 0);
+    }).slice(0, 10);
+
+    const container = document.getElementById('adminRecentSubs');
+    if (recent.length === 0) {
+      container.innerHTML = '<div class="empty-state"><div class="empty-icon">📭</div><p>No submissions yet</p></div>'; return;
+    }
+    container.innerHTML = recent.map(s => {
+      const student = allStudents.find(st => st.id === s.studentId) || {};
+      const item = (s.type === 'assignment'
+        ? allAssignments.find(a => a.id === s.assignmentId)
+        : allQuizzes.find(q => q.id === s.quizId)) || {};
+      const faculty = allFacultyList.find(f => f.id === item.facultyId) || {};
+      const isGraded = s.marks !== null && s.marks !== undefined;
+      return `<div class="item-card" style="margin-bottom:10px;">
+        <div class="item-card-header">
+          <h4>${student.name || 'Unknown'} <span style="font-weight:400;color:var(--text-muted);font-size:12px;">· ${student.usn || ''}</span></h4>
+          <span class="badge ${isGraded ? 'badge-green' : 'badge-yellow'}">${isGraded ? '✅ Graded' : '⏳ Pending'}</span>
+        </div>
+        <div class="item-meta">
+          <span class="meta-pill">${s.type === 'quiz' ? '❓' : '📚'} ${item.title || 'N/A'}</span>
+          <span class="meta-pill">📖 ${item.subject || 'N/A'}</span>
+          <span class="meta-pill">👨‍🏫 ${faculty.name || 'N/A'}</span>
+          <span class="meta-pill">🕐 ${fmtDate(s.submittedAt)}</span>
+          ${isGraded ? `<span class="meta-pill">⭐ ${s.marks} / ${item.maxMarks || '?'}</span>` : ''}
+        </div>
+      </div>`;
+    }).join('');
+  }
+
+  window.applySubjectFilter = function() {
+    const subject = document.getElementById('overviewSubjectFilter').value;
+    if (!subject) {
+      document.getElementById('subjectFilterInfo').textContent = 'Showing all data.';
+      renderRecentSubs(allSubmissions);
+      return;
+    }
+    const filteredAssignIds = new Set(allAssignments.filter(a => a.subject === subject).map(a => a.id));
+    const filteredQuizIds = new Set(allQuizzes.filter(q => q.subject === subject).map(q => q.id));
+    const filteredSubs = allSubmissions.filter(s =>
+      filteredAssignIds.has(s.assignmentId) || filteredQuizIds.has(s.quizId)
+    );
+    const filteredStudentIds = new Set(filteredSubs.map(s => s.studentId));
+    const filteredFaculty = allFacultyList.filter(f => (f.subjects || []).includes(subject));
+    document.getElementById('subjectFilterInfo').innerHTML =
+      `<strong style="color:var(--accent);">${subject}</strong>: ` +
+      `${filteredStudentIds.size} students · ${filteredFaculty.length} faculty · ${filteredSubs.length} submissions`;
+    renderRecentSubs(filteredSubs);
+  }
+
+  // ======= STUDENTS =======
+  window.renderStudents = function() {
+    const subjectFilter = document.getElementById('studentSubjectFilter').value;
+    const deptFilter = document.getElementById('studentDeptFilter').value;
+    const semFilter = document.getElementById('studentSemFilter').value;
+    const search = document.getElementById('studentSearch').value.toLowerCase();
+    const container = document.getElementById('studentList');
+
+    let students = allStudents;
+
+    if (subjectFilter) {
+      // Students who have submitted to assignments/quizzes of this subject
+      const subjectAssignIds = new Set(allAssignments.filter(a => a.subject === subjectFilter).map(a => a.id));
+      const subjectQuizIds = new Set(allQuizzes.filter(q => q.subject === subjectFilter).map(q => q.id));
+      const studentIdsWithSubject = new Set(
+        allSubmissions.filter(s => subjectAssignIds.has(s.assignmentId) || subjectQuizIds.has(s.quizId)).map(s => s.studentId)
+      );
+      students = students.filter(s => studentIdsWithSubject.has(s.id));
+    }
+    if (deptFilter) students = students.filter(s => s.department === deptFilter);
+    if (semFilter) students = students.filter(s => String(s.semester) === String(semFilter));
+    if (search) students = students.filter(s => (s.name||'').toLowerCase().includes(search) || (s.usn||'').toLowerCase().includes(search));
+
+    if (students.length === 0) {
+      container.innerHTML = '<div class="empty-state"><div class="empty-icon">🎓</div><p>No students found</p></div>'; return;
+    }
+
+    container.innerHTML = `
+      <div style="overflow-x:auto;">
+        <table style="width:100%;border-collapse:collapse;font-size:13px;">
+          <thead>
+            <tr style="border-bottom:1px solid var(--border);">
+              <th style="text-align:left;padding:10px 12px;color:var(--text-muted);font-weight:600;text-transform:uppercase;font-size:11px;letter-spacing:0.05em;">Name</th>
+              <th style="text-align:left;padding:10px 12px;color:var(--text-muted);font-weight:600;text-transform:uppercase;font-size:11px;letter-spacing:0.05em;">USN</th>
+              <th style="text-align:left;padding:10px 12px;color:var(--text-muted);font-weight:600;text-transform:uppercase;font-size:11px;letter-spacing:0.05em;">Department</th>
+              <th style="text-align:left;padding:10px 12px;color:var(--text-muted);font-weight:600;text-transform:uppercase;font-size:11px;letter-spacing:0.05em;">Sem</th>
+              <th style="text-align:left;padding:10px 12px;color:var(--text-muted);font-weight:600;text-transform:uppercase;font-size:11px;letter-spacing:0.05em;">Email</th>
+              <th style="text-align:left;padding:10px 12px;color:var(--text-muted);font-weight:600;text-transform:uppercase;font-size:11px;letter-spacing:0.05em;">Submissions</th>
+              <th style="text-align:left;padding:10px 12px;color:var(--text-muted);font-weight:600;text-transform:uppercase;font-size:11px;letter-spacing:0.05em;">Action</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${students.map(s => {
+              const subs = allSubmissions.filter(sub => sub.studentId === s.id);
+              const graded = subs.filter(sub => sub.marks !== null && sub.marks !== undefined);
+              return `<tr style="border-bottom:1px solid var(--border);transition:background 0.15s;" onmouseover="this.style.background='var(--bg-card2)'" onmouseout="this.style.background=''">
+                <td style="padding:10px 12px;font-weight:600;">${s.name || '—'}</td>
+                <td style="padding:10px 12px;"><span class="badge badge-blue">${s.usn || '—'}</span></td>
+                <td style="padding:10px 12px;color:var(--text-muted);">${s.department || '—'}</td>
+                <td style="padding:10px 12px;text-align:center;"><span class="badge badge-purple">Sem ${s.semester || '—'}</span></td>
+                <td style="padding:10px 12px;color:var(--text-muted);font-size:12px;">${s.email || '—'}</td>
+                <td style="padding:10px 12px;"><span class="meta-pill">${subs.length} total · ${graded.length} graded</span></td>
+                <td style="padding:10px 12px;"><button class="btn-sm btn-sm-accent" onclick="viewStudentDetail('${s.id}')">👁 View</button></td>
+              </tr>`;
+            }).join('')}
+          </tbody>
+        </table>
+      </div>`;
+  }
+
+  window.viewStudentDetail = function(studentId) {
+    const s = allStudents.find(st => st.id === studentId);
+    if (!s) return;
+    const subs = allSubmissions.filter(sub => sub.studentId === studentId);
+    const gradedSubs = subs.filter(sub => sub.marks !== null && sub.marks !== undefined);
+    document.getElementById('studentModalTitle').textContent = `🎓 ${s.name}`;
+
+    const subsHTML = subs.length === 0 ? '<p style="color:var(--text-muted);font-size:13px;margin-top:12px;">No submissions yet.</p>' :
+      subs.map(sub => {
+        const item = sub.type === 'assignment'
+          ? allAssignments.find(a => a.id === sub.assignmentId)
+          : allQuizzes.find(q => q.id === sub.quizId);
+        const faculty = item ? allFacultyList.find(f => f.id === item.facultyId) : null;
+        const isGraded = sub.marks !== null && sub.marks !== undefined;
+        const slab = getMarksSlab(sub.marks, item?.maxMarks || 100);
+        return `<div class="item-card" style="margin-bottom:10px;">
+          <div class="item-card-header">
+            <span>${sub.type === 'quiz' ? '❓' : '📚'} <strong>${item?.title || 'N/A'}</strong></span>
+            <span class="badge ${isGraded ? 'badge-green' : 'badge-yellow'}">${isGraded ? '✅ Graded' : '⏳ Pending'}</span>
+          </div>
+          <div class="item-meta">
+            <span class="meta-pill">📖 ${item?.subject || '—'}</span>
+            <span class="meta-pill">👨‍🏫 ${faculty?.name || '—'}</span>
+            <span class="meta-pill">🕐 ${fmtDate(sub.submittedAt)}</span>
+            ${isGraded ? `<span class="meta-pill" style="color:${slab.color};">⭐ ${sub.marks}/${item?.maxMarks || '?'} · ${slab.label}</span>` : ''}
+            ${sub.feedback ? `<span class="meta-pill">💬 ${sub.feedback}</span>` : ''}
+          </div>
+        </div>`;
+      }).join('');
+
+    document.getElementById('studentModalBody').innerHTML = `
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:20px;">
+        <div><label style="font-size:11px;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.05em;display:block;margin-bottom:4px;">Full Name</label><div style="font-weight:600;">${s.name || '—'}</div></div>
+        <div><label style="font-size:11px;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.05em;display:block;margin-bottom:4px;">USN</label><div style="font-weight:600;">${s.usn || '—'}</div></div>
+        <div><label style="font-size:11px;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.05em;display:block;margin-bottom:4px;">Email</label><div>${s.email || '—'}</div></div>
+        <div><label style="font-size:11px;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.05em;display:block;margin-bottom:4px;">Department</label><div>${s.department || '—'}</div></div>
+        <div><label style="font-size:11px;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.05em;display:block;margin-bottom:4px;">Semester</label><div>${s.semester || '—'}</div></div>
+        <div><label style="font-size:11px;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.05em;display:block;margin-bottom:4px;">Registered</label><div>${s.createdAt ? new Date(s.createdAt).toLocaleDateString('en-IN') : '—'}</div></div>
+        <div><label style="font-size:11px;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.05em;display:block;margin-bottom:4px;">Total Submissions</label><div><span class="badge badge-blue">${subs.length}</span></div></div>
+        <div><label style="font-size:11px;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.05em;display:block;margin-bottom:4px;">Graded</label><div><span class="badge badge-green">${gradedSubs.length}</span></div></div>
+      </div>
+      <div class="divider"></div>
+      <h4 style="font-size:13px;font-weight:700;color:var(--text-muted);margin:14px 0 10px;">SUBMISSIONS HISTORY</h4>
+      ${subsHTML}`;
+    document.getElementById('studentModal').classList.add('open');
+  }
+
+  // ======= FACULTY =======
+  window.renderFaculty = function() {
+    const subjectFilter = document.getElementById('facultySubjectFilter').value;
+    const deptFilter = document.getElementById('facultyDeptFilter').value;
+    const search = document.getElementById('facultySearch').value.toLowerCase();
+    const container = document.getElementById('facultyList');
+
+    let faculty = allFacultyList;
+    if (subjectFilter) faculty = faculty.filter(f => (f.subjects || []).includes(subjectFilter));
+    if (deptFilter) faculty = faculty.filter(f => f.department === deptFilter);
+    if (search) faculty = faculty.filter(f => (f.name||'').toLowerCase().includes(search) || (f.facultyId||'').toLowerCase().includes(search));
+
+    if (faculty.length === 0) {
+      container.innerHTML = '<div class="empty-state"><div class="empty-icon">👨‍🏫</div><p>No faculty found</p></div>'; return;
+    }
+
+    container.innerHTML = `
+      <div style="overflow-x:auto;">
+        <table style="width:100%;border-collapse:collapse;font-size:13px;">
+          <thead>
+            <tr style="border-bottom:1px solid var(--border);">
+              <th style="text-align:left;padding:10px 12px;color:var(--text-muted);font-weight:600;text-transform:uppercase;font-size:11px;letter-spacing:0.05em;">Name</th>
+              <th style="text-align:left;padding:10px 12px;color:var(--text-muted);font-weight:600;text-transform:uppercase;font-size:11px;letter-spacing:0.05em;">Faculty ID</th>
+              <th style="text-align:left;padding:10px 12px;color:var(--text-muted);font-weight:600;text-transform:uppercase;font-size:11px;letter-spacing:0.05em;">Department</th>
+              <th style="text-align:left;padding:10px 12px;color:var(--text-muted);font-weight:600;text-transform:uppercase;font-size:11px;letter-spacing:0.05em;">Subjects</th>
+              <th style="text-align:left;padding:10px 12px;color:var(--text-muted);font-weight:600;text-transform:uppercase;font-size:11px;letter-spacing:0.05em;">Email</th>
+              <th style="text-align:left;padding:10px 12px;color:var(--text-muted);font-weight:600;text-transform:uppercase;font-size:11px;letter-spacing:0.05em;">Assignments</th>
+              <th style="text-align:left;padding:10px 12px;color:var(--text-muted);font-weight:600;text-transform:uppercase;font-size:11px;letter-spacing:0.05em;">Action</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${faculty.map(f => {
+              const myAssign = allAssignments.filter(a => a.facultyId === f.id);
+              const myQuiz = allQuizzes.filter(q => q.facultyId === f.id);
+              return `<tr style="border-bottom:1px solid var(--border);transition:background 0.15s;" onmouseover="this.style.background='var(--bg-card2)'" onmouseout="this.style.background=''">
+                <td style="padding:10px 12px;font-weight:600;">${f.name || '—'}</td>
+                <td style="padding:10px 12px;"><span class="badge badge-purple">${f.facultyId || '—'}</span></td>
+                <td style="padding:10px 12px;color:var(--text-muted);">${f.department || '—'}</td>
+                <td style="padding:10px 12px;">${(f.subjects || []).map(s => `<span class="badge badge-blue" style="margin:2px;">${s}</span>`).join('') || '—'}</td>
+                <td style="padding:10px 12px;color:var(--text-muted);font-size:12px;">${f.email || '—'}</td>
+                <td style="padding:10px 12px;"><span class="meta-pill">${myAssign.length} assign · ${myQuiz.length} quiz</span></td>
+                <td style="padding:10px 12px;"><button class="btn-sm btn-sm-accent" onclick="viewFacultyDetail('${f.id}')">👁 View</button></td>
+              </tr>`;
+            }).join('')}
+          </tbody>
+        </table>
+      </div>`;
+  }
+
+  window.viewFacultyDetail = function(facultyId) {
+    const f = allFacultyList.find(fac => fac.id === facultyId);
+    if (!f) return;
+    const myAssign = allAssignments.filter(a => a.facultyId === facultyId);
+    const myQuiz = allQuizzes.filter(q => q.facultyId === facultyId);
+    const myAssignIds = new Set(myAssign.map(a => a.id));
+    const myQuizIds = new Set(myQuiz.map(q => q.id));
+    const mySubs = allSubmissions.filter(s => myAssignIds.has(s.assignmentId) || myQuizIds.has(s.quizId));
+    const pending = mySubs.filter(s => s.marks === null || s.marks === undefined);
+
+    document.getElementById('facultyModalTitle').textContent = `👨‍🏫 ${f.name}`;
+
+    const assignHTML = myAssign.length === 0 ? '<p style="color:var(--text-muted);font-size:13px;margin:8px 0;">No assignments posted.</p>' :
+      myAssign.map(a => {
+        const subs = allSubmissions.filter(s => s.assignmentId === a.id);
+        return `<div class="item-card" style="margin-bottom:8px;">
+          <div class="item-card-header">
+            <h4 style="font-size:13px;">📚 ${a.title}</h4>
+            <span class="badge badge-blue">📖 ${a.subject}</span>
+          </div>
+          <div class="item-meta">
+            <span class="meta-pill">📅 Due: ${a.deadline}</span>
+            <span class="meta-pill">🏆 ${a.maxMarks} marks</span>
+            <span class="meta-pill">📋 ${subs.length} submissions</span>
+            <span class="meta-pill">🎓 Sem ${a.semester || '—'}</span>
+          </div>
+        </div>`;
+      }).join('');
+
+    const quizHTML = myQuiz.length === 0 ? '<p style="color:var(--text-muted);font-size:13px;margin:8px 0;">No quizzes created.</p>' :
+      myQuiz.map(q => {
+        const subs = allSubmissions.filter(s => s.quizId === q.id);
+        return `<div class="item-card" style="margin-bottom:8px;">
+          <div class="item-card-header">
+            <h4 style="font-size:13px;">❓ ${q.title}</h4>
+            <span class="badge badge-purple">📖 ${q.subject}</span>
+          </div>
+          <div class="item-meta">
+            <span class="meta-pill">⏱ ${q.timer} min</span>
+            <span class="meta-pill">🏆 ${q.maxMarks} marks</span>
+            <span class="meta-pill">❓ ${q.questions?.length || 0} questions</span>
+            <span class="meta-pill">📋 ${subs.length} attempts</span>
+          </div>
+        </div>`;
+      }).join('');
+
+    document.getElementById('facultyModalBody').innerHTML = `
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:20px;">
+        <div><label style="font-size:11px;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.05em;display:block;margin-bottom:4px;">Full Name</label><div style="font-weight:600;">${f.name || '—'}</div></div>
+        <div><label style="font-size:11px;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.05em;display:block;margin-bottom:4px;">Faculty ID</label><div style="font-weight:600;">${f.facultyId || '—'}</div></div>
+        <div><label style="font-size:11px;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.05em;display:block;margin-bottom:4px;">Email</label><div>${f.email || '—'}</div></div>
+        <div><label style="font-size:11px;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.05em;display:block;margin-bottom:4px;">Department</label><div>${f.department || '—'}</div></div>
+        <div><label style="font-size:11px;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.05em;display:block;margin-bottom:4px;">Subjects Teaching</label><div>${(f.subjects || []).map(s => `<span class="badge badge-blue" style="margin:2px;">${s}</span>`).join('') || '—'}</div></div>
+        <div><label style="font-size:11px;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.05em;display:block;margin-bottom:4px;">Registered</label><div>${f.createdAt ? new Date(f.createdAt).toLocaleDateString('en-IN') : '—'}</div></div>
+        <div><label style="font-size:11px;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.05em;display:block;margin-bottom:4px;">Total Submissions Received</label><div><span class="badge badge-blue">${mySubs.length}</span></div></div>
+        <div><label style="font-size:11px;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.05em;display:block;margin-bottom:4px;">Pending Grading</label><div><span class="badge badge-yellow">${pending.length}</span></div></div>
+      </div>
+      <div class="divider"></div>
+      <h4 style="font-size:13px;font-weight:700;color:var(--text-muted);margin:14px 0 10px;">ASSIGNMENTS (${myAssign.length})</h4>
+      ${assignHTML}
+      <h4 style="font-size:13px;font-weight:700;color:var(--text-muted);margin:14px 0 10px;">QUIZZES (${myQuiz.length})</h4>
+      ${quizHTML}`;
+    document.getElementById('facultyModal').classList.add('open');
+  }
+
+  // ======= ASSIGNMENTS =======
+  window.renderAssignments = function() {
+    const subjectFilter = document.getElementById('assignSubjectFilter').value;
+    const facultyFilter = document.getElementById('assignFacultyFilter').value;
+    const search = document.getElementById('assignSearch').value.toLowerCase();
+    const container = document.getElementById('assignList');
+
+    let assigns = allAssignments;
+    if (subjectFilter) assigns = assigns.filter(a => a.subject === subjectFilter);
+    if (facultyFilter) assigns = assigns.filter(a => a.facultyId === facultyFilter);
+    if (search) assigns = assigns.filter(a => (a.title||'').toLowerCase().includes(search));
+
+    if (assigns.length === 0) {
+      container.innerHTML = '<div class="empty-state"><div class="empty-icon">📚</div><p>No assignments found</p></div>'; return;
+    }
+    const today = new Date().toISOString().split('T')[0];
+    container.innerHTML = assigns.map(a => {
+      const faculty = allFacultyList.find(f => f.id === a.facultyId) || {};
+      const subs = allSubmissions.filter(s => s.assignmentId === a.id);
+      const expired = a.deadline < today;
+      return `<div class="item-card">
+        <div class="item-card-header">
+          <h4>${a.title}</h4>
+          <div style="display:flex;gap:6px;flex-wrap:wrap;">
+            <span class="badge badge-blue">📖 ${a.subject}</span>
+            <span class="badge ${expired ? 'badge-red' : 'badge-green'}">${expired ? '⏰ Expired' : '🟢 Active'}</span>
+          </div>
+        </div>
+        <div class="item-meta">
+          <span class="meta-pill">👨‍🏫 ${faculty.name || '—'} (${faculty.facultyId || '—'})</span>
+          <span class="meta-pill">📅 Due: ${a.deadline}</span>
+          <span class="meta-pill">🏆 ${a.maxMarks} marks</span>
+          <span class="meta-pill">🎓 Sem ${a.semester || '—'}</span>
+          <span class="meta-pill">📋 ${subs.length} submissions</span>
+        </div>
+        <p style="font-size:13px;color:var(--text-muted);margin-top:8px;">${(a.desc||'').substring(0,150)}${(a.desc||'').length > 150 ? '…' : ''}</p>
+      </div>`;
+    }).join('');
+  }
+
+  // ======= QUIZZES =======
+  window.renderQuizzes = function() {
+    const subjectFilter = document.getElementById('quizSubjectFilter').value;
+    const facultyFilter = document.getElementById('quizFacultyFilter').value;
+    const search = document.getElementById('quizSearch').value.toLowerCase();
+    const container = document.getElementById('quizList');
+
+    let quizzes = allQuizzes;
+    if (subjectFilter) quizzes = quizzes.filter(q => q.subject === subjectFilter);
+    if (facultyFilter) quizzes = quizzes.filter(q => q.facultyId === facultyFilter);
+    if (search) quizzes = quizzes.filter(q => (q.title||'').toLowerCase().includes(search));
+
+    if (quizzes.length === 0) {
+      container.innerHTML = '<div class="empty-state"><div class="empty-icon">❓</div><p>No quizzes found</p></div>'; return;
+    }
+    container.innerHTML = quizzes.map(q => {
+      const faculty = allFacultyList.find(f => f.id === q.facultyId) || {};
+      const subs = allSubmissions.filter(s => s.quizId === q.id);
+      return `<div class="item-card">
+        <div class="item-card-header">
+          <h4>${q.title}</h4>
+          <span class="badge badge-purple">❓ Quiz</span>
+        </div>
+        <div class="item-meta">
+          <span class="meta-pill">👨‍🏫 ${faculty.name || '—'} (${faculty.facultyId || '—'})</span>
+          <span class="meta-pill">📖 ${q.subject}</span>
+          <span class="meta-pill">⏱ ${q.timer} min</span>
+          <span class="meta-pill">🏆 ${q.maxMarks} marks</span>
+          <span class="meta-pill">❓ ${q.questions?.length || 0} questions</span>
+          <span class="meta-pill">🎓 Sem ${q.semester || '—'}</span>
+          <span class="meta-pill">📋 ${subs.length} attempts</span>
+        </div>
+      </div>`;
+    }).join('');
+  }
+
+  // ======= SUBMISSIONS =======
+  window.renderSubmissions = function() {
+    const subjectFilter = document.getElementById('subSubjectFilter').value;
+    const typeFilter = document.getElementById('subTypeFilter').value;
+    const statusFilter = document.getElementById('subStatusFilter').value;
+    const search = document.getElementById('subSearch').value.toLowerCase();
+    const container = document.getElementById('subList');
+
+    let subs = allSubmissions;
+
+    if (subjectFilter) {
+      const subjectAssignIds = new Set(allAssignments.filter(a => a.subject === subjectFilter).map(a => a.id));
+      const subjectQuizIds = new Set(allQuizzes.filter(q => q.subject === subjectFilter).map(q => q.id));
+      subs = subs.filter(s => subjectAssignIds.has(s.assignmentId) || subjectQuizIds.has(s.quizId));
+    }
+    if (typeFilter) subs = subs.filter(s => s.type === typeFilter);
+    if (statusFilter === 'graded') subs = subs.filter(s => s.marks !== null && s.marks !== undefined);
+    if (statusFilter === 'pending') subs = subs.filter(s => s.marks === null || s.marks === undefined);
+    if (search) {
+      subs = subs.filter(s => {
+        const student = allStudents.find(st => st.id === s.studentId);
+        return (student?.name||'').toLowerCase().includes(search) || (student?.usn||'').toLowerCase().includes(search);
+      });
+    }
+
+    if (subs.length === 0) {
+      container.innerHTML = '<div class="empty-state"><div class="empty-icon">📭</div><p>No submissions found</p></div>'; return;
+    }
+
+    container.innerHTML = subs.slice(0, 50).map(s => {
+      const student = allStudents.find(st => st.id === s.studentId) || {};
+      const item = (s.type === 'assignment'
+        ? allAssignments.find(a => a.id === s.assignmentId)
+        : allQuizzes.find(q => q.id === s.quizId)) || {};
+      const faculty = allFacultyList.find(f => f.id === item.facultyId) || {};
+      const isGraded = s.marks !== null && s.marks !== undefined;
+      const slab = getMarksSlab(s.marks, item.maxMarks || 100);
+      return `<div class="item-card">
+        <div class="item-card-header">
+          <div>
+            <h4>${student.name || 'Unknown'} <span style="font-weight:400;color:var(--text-muted);font-size:12px;">· ${student.usn || 'N/A'}</span></h4>
+            <div class="item-meta" style="margin-top:4px;margin-bottom:0;">
+              <span class="meta-pill">${s.type === 'quiz' ? '❓' : '📚'} ${item.title || 'N/A'}</span>
+              <span class="meta-pill">📖 ${item.subject || 'N/A'}</span>
+              <span class="meta-pill">👨‍🏫 ${faculty.name || 'N/A'}</span>
+              <span class="meta-pill">🕐 ${fmtDate(s.submittedAt)}</span>
+            </div>
+          </div>
+          <div style="display:flex;flex-direction:column;align-items:flex-end;gap:4px;">
+            <span class="badge ${isGraded ? 'badge-green' : 'badge-yellow'}">${isGraded ? '✅ Graded' : '⏳ Pending'}</span>
+            ${isGraded ? `<span style="font-size:12px;color:${slab.color};">⭐ ${s.marks}/${item.maxMarks || '?'} · ${slab.label}</span>` : ''}
+          </div>
+        </div>
+        ${isGraded && s.feedback ? `<p style="font-size:12px;color:var(--text-muted);margin-top:8px;">💬 ${s.feedback}</p>` : ''}
+      </div>`;
+    }).join('') + (subs.length > 50 ? `<p style="color:var(--text-muted);font-size:13px;text-align:center;padding:12px;">Showing first 50 of ${subs.length} results. Use filters to narrow down.</p>` : '');
+  }
+
+  // ======= DOWNLOAD DB =======
+  function gradeLabel(marks, maxMarks) {
+    if (marks === null || marks === undefined) return 'Not Graded';
+    const pct = (marks / maxMarks) * 100;
+    if (pct >= 90) return 'Excellent';
+    if (pct >= 75) return 'Distinction';
+    if (pct >= 60) return 'First Class';
+    if (pct >= 50) return 'Pass';
+    return 'Fail';
+  }
+
+  function getFilters() {
+    return {
+      subject: document.getElementById('dlSubjectFilter')?.value || '',
+      faculty: document.getElementById('dlFacultyFilter')?.value || '',
+      sem: document.getElementById('dlSemFilter')?.value || ''
+    };
+  }
+
+  window.downloadDB = function(type) {
+    const { subject, faculty: facultyFilter, sem } = getFilters();
+    const today = new Date().toISOString().split('T')[0];
+
+    let assigns = allAssignments;
+    let quizzes = allQuizzes;
+    let students = allStudents;
+    let facultyArr = allFacultyList;
+
+    if (subject) { assigns = assigns.filter(a => a.subject === subject); quizzes = quizzes.filter(q => q.subject === subject); }
+    if (facultyFilter) { assigns = assigns.filter(a => a.facultyId === facultyFilter); quizzes = quizzes.filter(q => q.facultyId === facultyFilter); }
+    if (sem) { students = students.filter(s => String(s.semester) === String(sem)); }
+
+    const assignIds = new Set(assigns.map(a => a.id));
+    const quizIds = new Set(quizzes.map(q => q.id));
+
+    const suffix = [subject, facultyArr.find(f=>f.id===facultyFilter)?.name, sem ? `Sem${sem}` : ''].filter(Boolean).join('_') || 'All';
+
+    if (type === 'students') {
+      const rows = [['Name', 'USN', 'Email', 'Department', 'Semester', 'Registered At']];
+      students.forEach(s => rows.push([s.name, s.usn, s.email, s.department, s.semester, s.createdAt ? new Date(s.createdAt).toLocaleDateString('en-IN') : '—']));
+      exportCSV(rows, `DSCE_Students_${suffix}_${today}.csv`);
+    } else if (type === 'faculty') {
+      const rows = [['Name', 'Faculty ID', 'Email', 'Department', 'Subjects', 'Registered At']];
+      facultyArr.forEach(f => rows.push([f.name, f.facultyId, f.email, f.department, (f.subjects||[]).join('; '), f.createdAt ? new Date(f.createdAt).toLocaleDateString('en-IN') : '—']));
+      exportCSV(rows, `DSCE_Faculty_${today}.csv`);
+    } else if (type === 'assignments') {
+      const rows = [['Student Name', 'USN', 'Semester', 'Department', 'Subject', 'Assignment Title', 'Faculty', 'Marks', 'Max Marks', 'Grade', 'Submitted At', 'Feedback']];
+      const filteredSubs = allSubmissions.filter(s => s.type === 'assignment' && assignIds.has(s.assignmentId));
+      filteredSubs.forEach(sub => {
+        const student = allStudents.find(st => st.id === sub.studentId) || {};
+        const assign = allAssignments.find(a => a.id === sub.assignmentId) || {};
+        const fac = allFacultyList.find(f => f.id === assign.facultyId) || {};
+        const maxM = assign.maxMarks || 100;
+        rows.push([student.name||'—', student.usn||'—', student.semester||assign.semester||'—', student.department||'—', assign.subject||'—', assign.title||'—', fac.name||'—', sub.marks!==null&&sub.marks!==undefined?sub.marks:'Not Graded', maxM, gradeLabel(sub.marks, maxM), fmtDate(sub.submittedAt), sub.feedback||'—']);
+      });
+      exportCSV(rows, `DSCE_Assignment_Submissions_${suffix}_${today}.csv`);
+    } else if (type === 'quizzes') {
+      const rows = [['Student Name', 'USN', 'Semester', 'Department', 'Subject', 'Quiz Title', 'Faculty', 'Marks', 'Max Marks', 'Grade', 'Submitted At']];
+      const filteredSubs = allSubmissions.filter(s => s.type === 'quiz' && quizIds.has(s.quizId));
+      filteredSubs.forEach(sub => {
+        const student = allStudents.find(st => st.id === sub.studentId) || {};
+        const quiz = allQuizzes.find(q => q.id === sub.quizId) || {};
+        const fac = allFacultyList.find(f => f.id === quiz.facultyId) || {};
+        const maxM = quiz.maxMarks || sub.maxMarks || 100;
+        rows.push([student.name||'—', student.usn||'—', student.semester||quiz.semester||'—', student.department||'—', quiz.subject||'—', quiz.title||'—', fac.name||'—', sub.marks!==null&&sub.marks!==undefined?sub.marks:'Not Graded', maxM, gradeLabel(sub.marks, maxM), fmtDate(sub.submittedAt)]);
+      });
+      exportCSV(rows, `DSCE_Quiz_Submissions_${suffix}_${today}.csv`);
+    } else if (type === 'combined') {
+      const rows = [['Student Name', 'USN', 'Semester', 'Department', 'Subject', 'Title', 'Type', 'Faculty', 'Marks', 'Max Marks', 'Grade', 'Submitted At', 'Feedback']];
+      const filteredAssignSubs = allSubmissions.filter(s => s.type === 'assignment' && assignIds.has(s.assignmentId));
+      const filteredQuizSubs = allSubmissions.filter(s => s.type === 'quiz' && quizIds.has(s.quizId));
+      [...filteredAssignSubs, ...filteredQuizSubs].forEach(sub => {
+        const student = allStudents.find(st => st.id === sub.studentId) || {};
+        const item = sub.type === 'assignment' ? (allAssignments.find(a => a.id === sub.assignmentId) || {}) : (allQuizzes.find(q => q.id === sub.quizId) || {});
+        const fac = allFacultyList.find(f => f.id === item.facultyId) || {};
+        const maxM = item.maxMarks || 100;
+        rows.push([student.name||'—', student.usn||'—', student.semester||item.semester||'—', student.department||'—', item.subject||'—', item.title||'—', sub.type==='quiz'?'Quiz':'Assignment', fac.name||'—', sub.marks!==null&&sub.marks!==undefined?sub.marks:'Not Graded', maxM, gradeLabel(sub.marks, maxM), fmtDate(sub.submittedAt), sub.feedback||'—']);
+      });
+      exportCSV(rows, `DSCE_Combined_${suffix}_${today}.csv`);
+    } else if (type === 'full') {
+      // Full export: students + faculty + all submissions
+      const rows = [['Type', 'Name', 'ID', 'Email', 'Department', 'Semester/Subjects', 'Subject', 'Title', 'Marks', 'Max Marks', 'Grade', 'Date']];
+      allStudents.forEach(s => rows.push(['Student', s.name, s.usn, s.email, s.department, s.semester, '—', '—', '—', '—', '—', s.createdAt ? new Date(s.createdAt).toLocaleDateString('en-IN') : '—']));
+      allFacultyList.forEach(f => rows.push(['Faculty', f.name, f.facultyId, f.email, f.department, (f.subjects||[]).join('; '), '—', '—', '—', '—', '—', f.createdAt ? new Date(f.createdAt).toLocaleDateString('en-IN') : '—']));
+      allSubmissions.forEach(sub => {
+        const student = allStudents.find(st => st.id === sub.studentId) || {};
+        const item = sub.type === 'assignment' ? (allAssignments.find(a => a.id === sub.assignmentId) || {}) : (allQuizzes.find(q => q.id === sub.quizId) || {});
+        const maxM = item.maxMarks || 100;
+        rows.push(['Submission', student.name||'—', student.usn||'—', student.email||'—', student.department||'—', student.semester||'—', item.subject||'—', item.title||'—', sub.marks!==null&&sub.marks!==undefined?sub.marks:'Not Graded', maxM, gradeLabel(sub.marks, maxM), fmtDate(sub.submittedAt)]);
+      });
+      exportCSV(rows, `DSCE_Full_Export_${today}.csv`);
+    }
+  }
+
+  function exportCSV(rows, filename) {
+    const csv = rows.map(r => r.map(v => `"${String(v||'').replace(/"/g,'""')}"`).join(',')).join('\n');
+    const blob = new Blob([csv], { type: 'text/csv' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url; a.download = filename; a.click();
+    URL.revokeObjectURL(url);
+  }
+
+  // ======= FIRST-TIME ADMIN SETUP =======
+  window.setupAdmin = async function() {
+    const name = document.getElementById('setupName').value.trim();
+    const adminId = document.getElementById('setupAdminId').value.trim().toUpperCase();
+    const msgEl = document.getElementById('setupMsg');
+    if (!name || !adminId) { msgEl.textContent = '⚠️ Fill all fields!'; msgEl.className = 'msg show error'; return; }
+    try {
+      await setDoc(doc(db, "users", currentUser.uid), {
+        name, adminId, email: currentUser.email,
+        role: 'admin', uid: currentUser.uid,
+        createdAt: new Date().toISOString()
+      });
+      msgEl.textContent = '✅ Admin account created! Loading dashboard…';
+      msgEl.className = 'msg show success';
+      setTimeout(() => window.location.reload(), 1200);
+    } catch(e) {
+      msgEl.textContent = '❌ ' + e.message; msgEl.className = 'msg show error';
+    }
+  }
+
+  // ======= LOGOUT =======
+  window.logoutAdmin = async function() {
+    isLoggingOut = true;
+    try { await signOut(auth); } catch (e) { console.error(e); }
+    finally { window.location.href = 'index.html'; }
+  }
+
+  // Close modals on overlay click
+  ['studentModal','facultyModal'].forEach(id => {
+    document.getElementById(id).addEventListener('click', function(e) {
+      if (e.target === this) this.classList.remove('open');
+    });
+  });
+</script>
+
+</body>
+</html>

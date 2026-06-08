@@ -354,10 +354,12 @@
   let currentUser = null, currentFaculty = null;
   let allAssignments = [], allQuizzes = [], allSubmissions = [], allStudents = [];
   let quizQCount = 0;
-  let currentGradeSub = null; // {subId, maxMarks, currentMarks}
+  let currentGradeSub = null;
+  let isLoggingOut = false;
 
   // ======= AUTH =======
   onAuthStateChanged(auth, async (user) => {
+    if (isLoggingOut) return;
     if (!user) { window.location.href = 'index.html'; return; }
     currentUser = user;
     const uDoc = await getDoc(doc(db, "users", user.uid));
@@ -680,6 +682,8 @@
       ['quizTitle','quizTimer','quizMaxMarks','quizPublishDate'].forEach(id => document.getElementById(id).value = '');
       document.getElementById('quizSubject').value = '';
       document.getElementById('quizSem').value = '';
+      document.getElementById('quizShowAnswer').checked = false;
+      document.getElementById('quizShowMarks').checked = true;
       document.getElementById('quizQList').innerHTML = '';
       quizQCount = 0;
       await loadAllData();
@@ -1221,12 +1225,12 @@
 
   // ======= LOGOUT =======
   window.logoutUser = async function() {
+    isLoggingOut = true;
     try {
       await signOut(auth);
-      setTimeout(() => { window.location.href = 'index.html'; }, 100);
     } catch (err) {
       console.error('Logout error:', err);
-      alert('Logout failed: ' + (err?.message || 'Unknown error'));
+    } finally {
       window.location.href = 'index.html';
     }
   }
