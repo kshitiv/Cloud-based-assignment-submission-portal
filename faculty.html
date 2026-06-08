@@ -411,8 +411,12 @@
       q.facultyId === currentUser.uid || (subjectFilter && subjectFilter.some(s => s.toLowerCase() === (q.subject || '').toLowerCase()))
     );
 
-    const subSnap = await getDocs(collection(db, "submissions"));
-    allSubmissions = subSnap.docs.map(d => ({ id: d.id, ...d.data() }));
+    // Fetch from both assignment_submissions and quiz_submissions
+    const assignSubSnap = await getDocs(collection(db, "assignment_submissions"));
+    const quizSubSnap = await getDocs(collection(db, "quiz_submissions"));
+    const assignSubs = assignSubSnap.docs.map(d => ({ id: d.id, type: 'assignment', ...d.data() }));
+    const quizSubs = quizSubSnap.docs.map(d => ({ id: d.id, type: 'quiz', ...d.data() }));
+    allSubmissions = [...assignSubs, ...quizSubs];
 
     const studSnap = await getDocs(query(collection(db, "users"), where("role", "==", "student")));
     allStudents = studSnap.docs.map(d => ({ id: d.id, ...d.data() }));
@@ -811,10 +815,11 @@
     if (marks > maxMarks) { showMsg('gradeMsg2', `❌ Marks cannot exceed ${maxMarks}!`, 'error'); return; }
     if (marks < 0) { showMsg('gradeMsg2', '❌ Marks cannot be negative!', 'error'); return; }
 
-    // Faculty can edit marks but cannot re-upload (re-submit) marks if already graded and it's first time
-    // Rule: allow editing, just update
     try {
-      await updateDoc(doc(db, "submissions", subId), { marks, feedback, gradedAt: serverTimestamp(), gradedBy: currentUser.uid });
+      const sub = allSubmissions.find(s => s.id === subId);
+      const collectionName = sub.type === 'quiz' ? 'quiz_submissions' : 'assignment_submissions';
+      
+      await updateDoc(doc(db, collectionName, subId), { marks, feedback, gradedAt: serverTimestamp(), gradedBy: currentUser.uid });
       showMsg('gradeMsg2', '✅ Grade saved!', 'success');
       // Update local
       const idx = allSubmissions.findIndex(s => s.id === subId);

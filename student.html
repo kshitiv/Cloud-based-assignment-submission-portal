@@ -154,10 +154,13 @@
     // Filter: show quiz if semester matches student OR quiz has no semester
     allQuizzes = allQuizRaw.filter(q => !q.semester || String(q.semester) === String(currentStudent.semester));
 
-    const subQ = query(collection(db, "submissions"), where("studentId", "==", currentUser.uid));
+    const subQ = query(collection(db, "assignment_submissions"), where("studentId", "==", currentUser.uid));
     const subSnap = await getDocs(subQ);
-    mySubmissions = subSnap.docs.map(d => ({ id: d.id, ...d.data() })).filter(s => s.assignmentId);
-    myQuizSubs = subSnap.docs.map(d => ({ id: d.id, ...d.data() })).filter(s => s.quizId);
+    mySubmissions = subSnap.docs.map(d => ({ id: d.id, ...d.data() }));
+    
+    const quizQ = query(collection(db, "quiz_submissions"), where("studentId", "==", currentUser.uid));
+    const quizSubSnap = await getDocs(quizQ);
+    myQuizSubs = quizSubSnap.docs.map(d => ({ id: d.id, ...d.data() }));
 
     renderAssignments();
     renderQuizzes();
@@ -253,7 +256,7 @@
     }
 
     try {
-      await addDoc(collection(db, "submissions"), {
+      await addDoc(collection(db, "assignment_submissions"), {
         assignmentId: assignId,
         studentId: currentUser.uid,
         answer: answer || '',
@@ -384,7 +387,7 @@
     });
 
     try {
-      await addDoc(collection(db, "submissions"), {
+      await addDoc(collection(db, "quiz_submissions"), {
         quizId,
         studentId: currentUser.uid,
         answers,
